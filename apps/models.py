@@ -13,7 +13,7 @@ class Managers(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String(20), unique=True, index=True)
     HashedPassword = Column(String(20))
-    permission = Column(Boolean)
+    permission = Column(Boolean)  # 超级管理员权限
     dish = relationship("Dishes", back_populates="manager")  # 查询manager添加的dishes
 
 
@@ -42,20 +42,26 @@ class Dishes(Base):
 
 class Canteens(Base):  # 餐厅
     __tablename__ = "canteens"
-    id = Column(String(2), primary_key=True, index=True, autoincrement=True)
+    id = Column(String(2), primary_key=True, index=True)
     # 2位餐厅（校区编号+餐厅编号）id
     CanteenName = Column(String(10), index=True)
-    campus = Column(String(10), index=True)
+    CampusID = Column(Integer, index=True)
     LevelNum = Column(Integer)  # 楼层数   可改为tinyint
     # WindowNum =Column(Integer)
     # level = relationship("Levels", back_populates="dish")
+
+
+class Campus(Base):
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    CampusName = Column(String(10), index=True)
+    CanteenNum = Column(Integer)
 
 
 class Levels(Base):
     __tablename__ = "levels"
     id = Column(String(4), primary_key=True, index=True)
     # 2位餐厅（校区编号+餐厅编号）id  + 2位楼层id
-    level = Column(Integer)  # 楼层   可改为tinyint
+    # level = Column(Integer)  # 楼层   可改为tinyint
     WindowNum = Column(Integer)  # 窗口数   可改为tinyint
     # CanteenId = Column(String(2), ForeignKey("canteens.id"))
 
