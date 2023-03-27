@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
-from . import models
-from models import *
+from .models import *
 from fastapi import HTTPException
 
 
@@ -8,7 +7,7 @@ from fastapi import HTTPException
 def add_manager(db: Session, username: str, hashed_password: str):
     manager_dict = {
         "username": username,
-        "HashedPassword": hashed_password,
+        "hashed_password": hashed_password,
     }
     manager = Managers(**manager_dict)
     db.add(manager)
@@ -133,10 +132,6 @@ def add_dish(db: Session, manager_id: int,
     db.add(dish)
     db.commit()
     db.refresh(dish)
-
-
-
-
 
 
 def search_dish(db: Session, context: str, page: int, num: int):

@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-
-from database import Base
+from .database import Base
+from typing import Union
+from pydantic import BaseModel
 
 
 # import MySQLdb
@@ -12,9 +13,11 @@ class Managers(Base):
     __tablename__ = "managers"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String(20), unique=True, index=True)
-    HashedPassword = Column(String(20))
+    hashed_password = Column(String)
     permission = Column(Boolean)  # 超级管理员权限
-    dish = relationship("Dishes", back_populates="manager")  # 查询manager添加的dishes
+
+
+# dish = relationship("Dishes", back_populates="manager")  # 查询manager添加的dishes
 
 
 class Dishes(Base):
@@ -37,7 +40,9 @@ class Dishes(Base):
     SparePhotos = Column(String(70))  # 备用图片   url储存
     likes = Column(Integer)  # 点赞数
     # ManagerId = Column(Integer, ForeignKey("managers.id"))
-    manager = relationship("Managers", back_populates="dish")  # 查询添加dish的manager
+
+
+# manager = relationship("Managers", back_populates="dish")  # 查询添加dish的manager
 
 
 class Canteens(Base):  # 餐厅
@@ -52,6 +57,7 @@ class Canteens(Base):  # 餐厅
 
 
 class Campus(Base):
+    __tablename__ = "campus"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     CampusName = Column(String(10), index=True)
     CanteenNum = Column(Integer)
@@ -74,3 +80,21 @@ class Windows(Base):
     DishNum = Column(Integer)
     # CanteenId = Column(String(2), ForeignKey("canteens.id"))
     # LevelId = Column(String(4), ForeignKey("levels.id"))
+
+
+# Token 相关模型
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: Union[str, None] = None
+
+
+class ManagerMessage(BaseModel):
+    username: str
+    permission: bool
+
+
