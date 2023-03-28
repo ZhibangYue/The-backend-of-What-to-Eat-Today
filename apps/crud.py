@@ -34,7 +34,7 @@ def add_campus(db: Session, name: str):
 
 def add_campus_canteen_num(db: Session, canteen_id: int):
     campus = get_campus_by_id(db, canteen_id)
-    campus.CanteenNum += 1
+    campus.canteen_num += 1
 
 
 # 可以判断餐厅是否存在
