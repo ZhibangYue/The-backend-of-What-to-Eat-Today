@@ -100,7 +100,10 @@ def read_root():
     return {"Hello": "World"}
 
 
-@background.post("/signup", status_code=201, response_description="created successfully", summary="注册")
+# 管理员接口
+
+# 添加新管理员（拥有超级管理员权限才可使用）
+@background.post("/manager/add/", status_code=201, response_description="created successfully", summary="注册")
 async def signup(current_manager: ManagerMessage = Depends(get_current_active_manager),
                  username: str = Form(..., max_length=20),
                  password: str = Form(..., min_length=8, max_lengh=20),
@@ -112,11 +115,13 @@ async def signup(current_manager: ManagerMessage = Depends(get_current_active_ma
     return {"detail": "注册成功"}
 
 
-@background.post("/token", status_code=201, response_model=Token, response_description="login successfully",
+# 登录管理员
+
+@background.post("/manager/login/", status_code=201, response_model=Token, response_description="login successfully",
                  summary="登录")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_manager(form_data.username, form_data.password, db)
-    if not user:
+    manager = authenticate_manager(form_data.username, form_data.password, db)
+    if not manager:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -124,9 +129,24 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": manager.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# 删除管理员（拥有超级管理员权限才可使用）
+@background.put("/manager/delete/", status_code=201, response_description="deleted successfully",
+                summary="删除管理员")
+async def delete_current_manager(username: str, db: Session = Depends(get_db),
+                                 current_manager: ManagerMessage = Depends(get_current_active_manager)):
+    manager = get_manager(db, username)
+    if not manager:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect username"
+        )
+    # delete_manager(db,username)
+    return {"detail": "删除成功"}
 
 
 # 餐厅管理接口
@@ -140,13 +160,13 @@ async def add_new_canteens(dish_message: DishMessage, db: Session = Depends(get_
     canteen = get_canteen_by_name(db, dish_message.canteen_id)
     if canteen:
         raise HTTPException(status_code=400, detail="餐厅已存在")
-    add_canteen(db,)
+    add_canteen(db, )
     return {"message": "success"}
 
 
 # 修改餐厅
 @background.put("/canteens/edit/", status_code=200, response_description="edited successfully", summary="修改餐厅")
-async def edit_canteens(dish_message: DishMessage,current_manager: ManagerMessage = Depends(get_current_manager)):
+async def edit_canteens(dish_message: DishMessage, current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"username": current_manager.username, "message": "success"}
 
 
@@ -166,9 +186,9 @@ async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_
 # 增加新菜品
 @background.post("/dishes/add/", status_code=200, response_description="added successfully", summary="增加新菜品")
 async def add_new_dishes(
-                         current_manager: ManagerMessage = Depends(get_current_manager),
-                         db: Session = Depends(get_db)
-                         ):
+        current_manager: ManagerMessage = Depends(get_current_manager),
+        db: Session = Depends(get_db)
+):
     return {"username": current_manager.username, "message": "success"}
 
 
