@@ -49,11 +49,17 @@ def authenticate_manager(username: str, password: str, db: Session = Depends(get
 
 # 定义Token 相关常量
 
-SECRET_KEY = "b81a5447dba59bda81233e037a5f4d6232f0f84a4ca8633c10ce7b57fe916a2b"  # 密钥
-ALGORITHM = "HS256"  # 加密算法
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # Token过期时间
+# 密钥
+SECRET_KEY = "b81a5447dba59bda81233e037a5f4d6232f0f84a4ca8633c10ce7b57fe916a2b"
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# 加密算法
+ALGORITHM = "HS256"
+
+# Token过期时间
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# 依赖token登录的url
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="./manager/login/")
 
 
 # 创建生成新地访问令牌的工具函数
