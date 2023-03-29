@@ -13,6 +13,7 @@ class TokenData(BaseModel):
     username: Union[str, None] = None
 
 
+# 管理员信息模型
 class ManagerMessage(BaseModel):
     username: str
     permission: bool
@@ -21,6 +22,7 @@ class ManagerMessage(BaseModel):
         orm_mode = True
 
 
+# 菜品信息模型
 class DishMessage(BaseModel):
     manager_id: int
     name: str
@@ -32,6 +34,18 @@ class DishMessage(BaseModel):
     photos: str
     spare_photos: str
     dish_id: str
+
+    class Config:
+        orm_mode = True
+
+
+# 餐厅信息模型
+class CanteenMessage(BaseModel):
+    id: int
+    canteen_name: str
+    campus_id: int
+    level_num: int
+    window_num: int
 
     class Config:
         orm_mode = True

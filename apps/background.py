@@ -134,19 +134,19 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 # 增加新餐厅
 @background.post("/canteens/add/", status_code=200, response_description="added successfully", summary="增加新餐厅",
                  response_model=ManagerMessage)
-async def add_new_canteens(canteen_name: str, campus_id: int, level_num: int, db: Session = Depends(get_db),
+async def add_new_canteens(dish_message: DishMessage, db: Session = Depends(get_db),
                            current_manager: ManagerMessage = Depends(get_current_manager),
                            ):
-    canteen = get_canteen_by_name(db, canteen_name)
+    canteen = get_canteen_by_name(db, dish_message.canteen_id)
     if canteen:
         raise HTTPException(status_code=400, detail="餐厅已存在")
-    add_canteen(db, canteen_name, campus_id, level_num)
+    add_canteen(db,)
     return {"message": "success"}
 
 
 # 修改餐厅
 @background.put("/canteens/edit/", status_code=200, response_description="edited successfully", summary="修改餐厅")
-async def edit_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
+async def edit_canteens(dish_message: DishMessage,current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"username": current_manager.username, "message": "success"}
 
 
@@ -165,9 +165,7 @@ async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_
 # 菜品管理接口
 # 增加新菜品
 @background.post("/dishes/add/", status_code=200, response_description="added successfully", summary="增加新菜品")
-async def add_new_dishes(manager_id: int, name: str, morning: bool, noon: bool, night: bool,
-                         canteen_id: str, muslim: bool, photos: str,
-                         spare_photos: str, dish_id: str,
+async def add_new_dishes(
                          current_manager: ManagerMessage = Depends(get_current_manager),
                          db: Session = Depends(get_db)
                          ):

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from .models import *
+from .schemas import *
 from fastapi import HTTPException
 
 
@@ -46,11 +47,11 @@ def get_campus_by_id(db: Session, campus_id: int):
     return db.query(Campus).filter(Campus.id == campus_id).first()
 
 
-def add_canteen(db: Session, canteen_name: str, campus_id: int, level_num: int):
+def add_canteen(db: Session, canteen_name: str, campus_id: int):
     canteen_dict = {
         "canteen_name": canteen_name,
         "campus_id": campus_id,
-        "level_num": level_num,
+        "level_num": 0,
         "id": str(campus_id) + str(get_campus_by_id(db, campus_id).canteen_num + 1)
     }
     add_campus_canteen_num(db, int(str(campus_id) + str(get_campus_by_id(db, campus_id).canteen_num + 1)))
@@ -114,20 +115,19 @@ def make_dish_id(db: Session, window_id: str):
 
 
 # dish_id参数来源 make_dish_id
-def add_dish(db: Session, manager_id: int,
-             name: str, morning: bool, noon: bool, night: bool, canteen_id: str, muslim: bool, photos: str,
-             spare_photos: str, dish_id: str):
+def add_dish(db: Session, dish_message: DishMessage):
     dish_dict = {
-        "dish_name": name,
-        "morning": morning,
-        "noon": noon,
-        "night": night,
-        "canteen_id": canteen_id,
-        "muslim": muslim,
-        "photos": photos,
-        "spare_photos": spare_photos,
-        "manager": manager_id,
-        "id": dish_id
+        "dish_name": dish_message.name,
+        "morning": dish_message.morning,
+        "noon": dish_message.noon,
+        "night": dish_message.night,
+        "canteen_id": dish_message.canteen_id,
+        "muslim": dish_message.muslim,
+        "photos": dish_message.photos,
+        "spare_photos": dish_message.spare_photos,
+        "manager": dish_message.manager_id,
+        "id": dish_message.dish_id
+
     }
     dish = Dishes(**dish_dict)
     db.add(dish)
