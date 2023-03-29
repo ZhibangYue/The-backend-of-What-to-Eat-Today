@@ -53,7 +53,7 @@ def add_canteen(db: Session, canteen_name: str, campus_id: int, level_num: int):
         "level_num": level_num,
         "id": str(campus_id) + str(get_campus_by_id(db, campus_id).canteen_num + 1)
     }
-    add_campus_canteen_num(db, campus_id)
+    add_campus_canteen_num(db, int(str(campus_id) + str(get_campus_by_id(db, campus_id).canteen_num + 1)))
     canteen = Canteens(**canteen_dict)
     db.add(canteen)
     db.commit()
@@ -73,7 +73,7 @@ def add_level(db: Session, canteen_id: str, level: int):
         level = -level
     level_dict = {
         "id": canteen_id + a + str(level),
-        "WindowNum": 0
+        "window_num": 0
     }
     canteen = db.query(Canteens).filter(Canteens.id == canteen_id).first()
     canteen.level_num += 1

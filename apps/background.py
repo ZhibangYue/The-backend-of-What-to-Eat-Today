@@ -90,7 +90,7 @@ async def get_current_manager(token: str = Depends(oauth2_scheme), db: Session =
 
 
 async def get_current_active_manager(current_manager: ManagerMessage = Depends(get_current_manager)):
-    if current_manager.permission:
+    if not current_manager.permission:
         raise HTTPException(status_code=400, detail="Inactive manager")
     return current_manager
 
@@ -101,10 +101,10 @@ def read_root():
 
 
 @background.post("/signup", status_code=201, response_description="created successfully", summary="注册")
-async def signup(
-        username: str = Form(..., max_length=20),
-        password: str = Form(..., min_length=8, max_lengh=20),
-        db=Depends(get_db)):
+async def signup(current_manager: ManagerMessage = Depends(get_current_active_manager),
+                 username: str = Form(..., max_length=20),
+                 password: str = Form(..., min_length=8, max_lengh=20),
+                 db=Depends(get_db)):
     if get_manager(db, username):
         raise HTTPException(detail="用户名已存在", status_code=400)
     hashed_password = hash_password(password)
@@ -135,7 +135,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 @background.post("/canteens/add/", status_code=200, response_description="added successfully", summary="增加新餐厅",
                  response_model=ManagerMessage)
 async def add_new_canteens(canteen_name: str, campus_id: int, level_num: int, db: Session = Depends(get_db),
-                           current_manager: ManagerMessage = Depends(get_current_active_manager),
+                           current_manager: ManagerMessage = Depends(get_current_manager),
                            ):
     canteen = get_canteen_by_name(db, canteen_name)
     if canteen:
@@ -146,19 +146,19 @@ async def add_new_canteens(canteen_name: str, campus_id: int, level_num: int, db
 
 # 修改餐厅
 @background.put("/canteens/edit/", status_code=200, response_description="edited successfully", summary="修改餐厅")
-async def edit_canteens(current_manager: ManagerMessage = Depends(get_current_active_manager)):
+async def edit_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"username": current_manager.username, "message": "success"}
 
 
 # 获取餐厅信息
 @background.get("/canteens/get/", status_code=200, response_description="got successfully", summary="获取餐厅信息")
-async def get_current_campus(current_manager: ManagerMessage = Depends(get_current_active_manager)):
+async def get_current_campus(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success", "data": {}}
 
 
 # 删除餐厅
 @background.put("/canteens/delete/", status_code=200, response_description="deleted successfully", summary="删除餐厅")
-async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_active_manager)):
+async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success"}
 
 
@@ -168,7 +168,7 @@ async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_
 async def add_new_dishes(manager_id: int, name: str, morning: bool, noon: bool, night: bool,
                          canteen_id: str, muslim: bool, photos: str,
                          spare_photos: str, dish_id: str,
-                         current_manager: ManagerMessage = Depends(get_current_active_manager),
+                         current_manager: ManagerMessage = Depends(get_current_manager),
                          db: Session = Depends(get_db)
                          ):
     return {"username": current_manager.username, "message": "success"}
@@ -176,17 +176,17 @@ async def add_new_dishes(manager_id: int, name: str, morning: bool, noon: bool, 
 
 # 修改菜品
 @background.put("/dishes/edit/", status_code=200, response_description="edited successfully", summary="修改菜品")
-async def edit_dishes(current_manager: ManagerMessage = Depends(get_current_active_manager)):
+async def edit_dishes(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"username": current_manager.username, "message": "success"}
 
 
 # 获取菜品信息
 @background.get("/dishes/get/", status_code=200, response_description="got successfully", summary="获取菜品信息")
-async def get_current_dishes(current_manager: ManagerMessage = Depends(get_current_active_manager)):
+async def get_current_dishes(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success", "data": {}}
 
 
 # 删除菜品
 @background.put("/dishes/delete/", status_code=200, response_description="deleted successfully", summary="删除菜品")
-async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_active_manager)):
+async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success"}
