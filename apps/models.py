@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Boolean
+from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, Float
 from sqlalchemy.orm import relationship
 from .database import Base
 from typing import Union
@@ -31,6 +31,8 @@ class Dishes(Base):
     muslim = Column(Boolean)  # 是否清真
     level = Column(Integer)  # 楼层   可改为tinyint
     window = Column(Integer)  # 窗口   可改为tinyint
+    price = Column(Float)
+    size = Column(String)
     """
     ！！！！！！！改为通过id分解   2位餐厅（校区编号+餐厅编号）id  + 2位楼层id +2位 窗口编号 + 3位dish编号！！！！！！！
     """

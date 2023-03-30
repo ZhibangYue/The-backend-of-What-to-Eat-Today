@@ -34,6 +34,8 @@ class DishMessage(BaseModel):
     photos: str
     spare_photos: str
     dish_id: str
+    price: float
+    size: str
 
     class Config:
         orm_mode = True
@@ -46,6 +48,39 @@ class CanteenMessage(BaseModel):
     campus_id: int
     level_num: int
     window_num: int
+
+    class Config:
+        orm_mode = True
+
+
+# 校区信息模型
+class CampusMessage(BaseModel):
+    id: int
+    campus_name: str
+    canteen_num: int
+
+    class Config:
+        orm_mode = True
+
+
+# 层数信息模型
+class LevelMessage(BaseModel):
+    id: str
+    level: int
+    window_num: int
+    canteen_id: int
+
+    class Config:
+        orm_mode = True
+
+
+# 窗口信息模型
+class WindowsMessage(BaseModel):
+    id: str
+    window_name: str
+    dish_num: int
+    canteen_id: int
+    level_id: int
 
     class Config:
         orm_mode = True
