@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Union
+from fastapi import Form
 
 
 # Token 相关模型
@@ -11,6 +12,18 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
+
+
+# 登录表单
+class PasswordRequestForm:
+
+    def __init__(
+            self,
+            username: str = Form(),
+            password: str = Form()
+    ):
+        self.username = username
+        self.password = password
 
 
 # 管理员信息模型

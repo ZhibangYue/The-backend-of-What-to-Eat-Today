@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
 
 background = APIRouter()
 
@@ -59,7 +58,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # 依赖token登录的url
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="./manager/login/")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="./token")
 
 
 # 创建生成新地访问令牌的工具函数
@@ -89,10 +88,10 @@ async def get_current_manager(token: str = Depends(oauth2_scheme), db: Session =
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_manager(db, username=token_data.username)
-    if user is None:
+    manager = get_manager(db, username=token_data.username)
+    if manager is None:
         raise credentials_exception
-    return user
+    return manager
 
 
 async def get_current_active_manager(current_manager: ManagerMessage = Depends(get_current_manager)):
@@ -109,7 +108,7 @@ def read_root():
 # 管理员接口
 
 # 添加新管理员（拥有超级管理员权限才可使用）
-@background.post("/manager/add/", status_code=201, response_description="created successfully", summary="注册")
+@background.post("/managers/signin", status_code=201, response_description="created successfully", summary="注册")
 async def signup(current_manager: ManagerMessage = Depends(get_current_active_manager),
                  username: str = Form(..., max_length=20),
                  password: str = Form(..., min_length=8, max_lengh=20),
@@ -118,13 +117,13 @@ async def signup(current_manager: ManagerMessage = Depends(get_current_active_ma
         raise HTTPException(detail="用户名已存在", status_code=400)
     hashed_password = hash_password(password)
     add_manager(db, username, hashed_password)
-    return {"detail": "注册成功"}
+    return {"message": "注册成功"}
 
 
-# 登录管理员
+# 交互文档登录
 
-@background.post("/manager/login/", status_code=201, response_model=Token, response_description="login successfully",
-                 summary="登录")
+@background.post("/token", status_code=200, response_model=Token, response_description="login successfully",
+                 summary="交互文档登录")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     manager = authenticate_manager(form_data.username, form_data.password, db)
     if not manager:
@@ -140,25 +139,49 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+# 登录
+@background.post("/managers/login", status_code=200, response_model=Token, response_description="login successfully",
+                 summary="登录")
+async def login_for_access_token(form_data: PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    manager = authenticate_manager(form_data.username, form_data.password, db)
+    if not manager:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户名或密码错误",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": manager.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
 # 删除管理员（拥有超级管理员权限才可使用）
-@background.put("/manager/delete/", status_code=201, response_description="deleted successfully",
-                summary="删除管理员")
+@background.delete("/managers", status_code=200, response_description="deleted successfully",
+                   summary="删除管理员")
 async def delete_current_manager(username: str, db: Session = Depends(get_db),
                                  current_manager: ManagerMessage = Depends(get_current_active_manager)):
     manager = get_manager(db, username)
     if not manager:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect username"
+            detail="用户名不存在"
         )
-    # delete_manager(db,username)
-    return {"detail": "删除成功"}
+    if manager.permission:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="权限不足"
+        )
+    db.delete(manager)
+    db.commit()
+    return {"message": "删除成功"}
 
 
 # 餐厅管理接口
 
 # 增加新餐厅
-@background.post("/canteens/add/", status_code=200, response_description="added successfully", summary="增加新餐厅",
+@background.post("/canteens", status_code=201, response_description="added successfully", summary="增加新餐厅",
                  response_model=ManagerMessage)
 async def add_new_canteens(dish_message: DishMessage, db: Session = Depends(get_db),
                            current_manager: ManagerMessage = Depends(get_current_manager),
@@ -171,26 +194,26 @@ async def add_new_canteens(dish_message: DishMessage, db: Session = Depends(get_
 
 
 # 修改餐厅
-@background.put("/canteens/edit/", status_code=200, response_description="edited successfully", summary="修改餐厅")
+@background.put("/canteens", status_code=200, response_description="edited successfully", summary="修改餐厅")
 async def edit_canteens(dish_message: DishMessage, current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"username": current_manager.username, "message": "success"}
 
 
 # 获取餐厅信息
-@background.get("/canteens/get/", status_code=200, response_description="got successfully", summary="获取餐厅信息")
+@background.get("/canteens", status_code=200, response_description="got successfully", summary="获取餐厅信息")
 async def get_current_campus(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success", "data": {}}
 
 
 # 删除餐厅
-@background.put("/canteens/delete/", status_code=200, response_description="deleted successfully", summary="删除餐厅")
+@background.delete("/canteens", status_code=200, response_description="deleted successfully", summary="删除餐厅")
 async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success"}
 
 
 # 菜品管理接口
 # 增加新菜品
-@background.post("/dishes/add/", status_code=200, response_description="added successfully", summary="增加新菜品")
+@background.post("/dishes", status_code=201, response_description="added successfully", summary="增加新菜品")
 async def add_new_dishes(
         current_manager: ManagerMessage = Depends(get_current_manager),
         db: Session = Depends(get_db)
@@ -199,18 +222,21 @@ async def add_new_dishes(
 
 
 # 修改菜品
-@background.put("/dishes/edit/", status_code=200, response_description="edited successfully", summary="修改菜品")
+@background.put("/dishes", status_code=200, response_description="edited successfully", summary="修改菜品")
 async def edit_dishes(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"username": current_manager.username, "message": "success"}
 
 
 # 获取菜品信息
-@background.get("/dishes/get/", status_code=200, response_description="got successfully", summary="获取菜品信息")
+@background.get("/dishes", status_code=200, response_description="got successfully", summary="获取菜品信息")
 async def get_current_dishes(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success", "data": {}}
 
 
 # 删除菜品
-@background.put("/dishes/delete/", status_code=200, response_description="deleted successfully", summary="删除菜品")
+@background.delete("/dishes", status_code=200, response_description="deleted successfully", summary="删除菜品")
 async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success"}
+
+# 上传图片
+
