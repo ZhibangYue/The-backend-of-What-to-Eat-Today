@@ -1,4 +1,8 @@
-from fastapi import FastAPI, HTTPException, Depends, Form, status, APIRouter
+import random
+import time
+
+import aiofiles
+from fastapi import FastAPI, HTTPException, Depends, Form, status, APIRouter, File, UploadFile
 from passlib.context import CryptContext
 from .database import SessionLocal
 from .crud import *
@@ -117,7 +121,7 @@ async def signup(current_manager: ManagerMessage = Depends(get_current_active_ma
         raise HTTPException(detail="用户名已存在", status_code=400)
     hashed_password = hash_password(password)
     add_manager(db, username, hashed_password)
-    return {"message": "注册成功"}
+    return {"message": "success", "detail": "注册成功"}
 
 
 # 交互文档登录
@@ -175,22 +179,27 @@ async def delete_current_manager(username: str, db: Session = Depends(get_db),
         )
     db.delete(manager)
     db.commit()
-    return {"message": "删除成功"}
+    return {"message": "success", "detail": "删除成功"}
 
 
 # 餐厅管理接口
 
 # 增加新餐厅
-@background.post("/canteens", status_code=201, response_description="added successfully", summary="增加新餐厅",
-                 response_model=ManagerMessage)
-async def add_new_canteens(dish_message: DishMessage, db: Session = Depends(get_db),
-                           current_manager: ManagerMessage = Depends(get_current_manager),
+@background.post("/canteens", status_code=201, response_description="added successfully", summary="增加新餐厅")
+async def add_new_canteens(canteen_message: CanteenMessage, db: Session = Depends(get_db),
+                           current_manager: ManagerMessage = Depends(get_current_manager)
                            ):
-    canteen = get_canteen_by_name(db, dish_message.canteen_id)
+    canteen = get_canteen_by_name(db, canteen_message.canteen_name)
     if canteen:
         raise HTTPException(status_code=400, detail="餐厅已存在")
-    add_canteen(db, )
-    return {"message": "success"}
+    add_canteen(db, canteen_message)
+    new_canteen = get_canteen_by_name(db, canteen_message.canteen_name)
+    for b in canteen_message.window:
+        add_level(db, new_canteen.canteen_id, b.level, b.windows_num)
+        for c in b.windows_information:
+            new_level = get_level(db, b.level)
+            add_window(db, c.windows_name, new_level.level_id, c.windows)
+    return {"message": "success", "detail": "添加成功"}
 
 
 # 修改餐厅
@@ -208,17 +217,18 @@ async def get_current_campus(current_manager: ManagerMessage = Depends(get_curre
 # 删除餐厅
 @background.delete("/canteens", status_code=200, response_description="deleted successfully", summary="删除餐厅")
 async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
-    return {"message": "success"}
+    return {"message": "success", "detail": "删除成功"}
 
 
 # 菜品管理接口
 # 增加新菜品
 @background.post("/dishes", status_code=201, response_description="added successfully", summary="增加新菜品")
-async def add_new_dishes(
-        current_manager: ManagerMessage = Depends(get_current_manager),
-        db: Session = Depends(get_db)
-):
-    return {"username": current_manager.username, "message": "success"}
+async def add_new_dishes(dish_message: DishMessage,
+                         current_manager: ManagerMessage = Depends(get_current_manager),
+                         db: Session = Depends(get_db)
+                         ):
+    add_dish(db, dish_message)
+    return {"message": "success", "detail": "添加成功"}
 
 
 # 修改菜品
@@ -238,5 +248,18 @@ async def get_current_dishes(current_manager: ManagerMessage = Depends(get_curre
 async def delete_current_canteens(current_manager: ManagerMessage = Depends(get_current_manager)):
     return {"message": "success"}
 
-# 上传图片
 
+# 上传图片
+@background.post("/photos", status_code=201, response_description="added successfully", summary="上传图片")
+async def add_photo(photo: UploadFile, current_manager: ManagerMessage = Depends(get_current_manager),
+                    db=Depends(get_db)):
+    zh = photo.filename.split(".").pop()
+    dir_path = "./static/"
+    file_name = str(random.randint(10000, 99999) + time.time()) + "." + zh
+    file_path = dir_path + file_name
+    async with aiofiles.open(file_path, "wb") as f:
+        await f.write(await photo.read())
+    return {"message": "success", "detail": "上传成功", "data": file_path}
+
+# 获取图片
+# @background.get("photos")

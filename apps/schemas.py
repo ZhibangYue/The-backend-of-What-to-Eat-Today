@@ -35,37 +35,6 @@ class ManagerMessage(BaseModel):
         orm_mode = True
 
 
-# 菜品信息模型
-class DishMessage(BaseModel):
-    manager_id: int
-    name: str
-    morning: bool
-    noon: bool
-    night: bool
-    canteen_id: str
-    muslim: bool
-    photos: str
-    spare_photos: str
-    dish_id: str
-    price: float
-    size: str
-
-    class Config:
-        orm_mode = True
-
-
-# 餐厅信息模型
-class CanteenMessage(BaseModel):
-    id: int
-    canteen_name: str
-    campus_id: int
-    level_num: int
-    window_num: int
-
-    class Config:
-        orm_mode = True
-
-
 # 校区信息模型
 class CampusMessage(BaseModel):
     id: int
@@ -78,7 +47,7 @@ class CampusMessage(BaseModel):
 
 # 层数信息模型
 class LevelMessage(BaseModel):
-    id: str
+    level_id: str
     level: int
     window_num: int
     canteen_id: int
@@ -87,13 +56,49 @@ class LevelMessage(BaseModel):
         orm_mode = True
 
 
+class WindowsInformation(BaseModel):
+    windows_name: str
+    windows: int
+
+    class Config:
+        orm_mode = True
+
+
 # 窗口信息模型
 class WindowsMessage(BaseModel):
-    id: str
-    window_name: str
-    dish_num: int
-    canteen_id: int
-    level_id: int
+    level: int
+    windows_num: int
+    windows_information: list[WindowsInformation]
+
+    class Config:
+        orm_mode = True
+
+
+# 餐厅信息模型
+class CanteenMessage(BaseModel):
+    canteen_name: str
+    campus_id: int
+    level_num: int
+    window: list[WindowsMessage]
+
+    class Config:
+        orm_mode = True
+
+
+# 菜品信息模型
+class DishMessage(BaseModel):
+    name: str
+    morning: bool
+    noon: bool
+    night: bool
+    canteen_id: str
+    muslim: bool
+    photos: str
+    spare_photos: str
+    price: float
+    size: str
+    level: int
+    window: int
 
     class Config:
         orm_mode = True
