@@ -56,6 +56,7 @@ class LevelMessage(BaseModel):
         orm_mode = True
 
 
+# 窗口信息模型
 class WindowsInformation(BaseModel):
     windows_name: str
     windows: int
@@ -64,7 +65,7 @@ class WindowsInformation(BaseModel):
         orm_mode = True
 
 
-# 窗口信息模型
+# 窗口模型
 class WindowsMessage(BaseModel):
     level: int
     windows_num: int
@@ -79,7 +80,7 @@ class CanteenMessage(BaseModel):
     canteen_name: str
     campus_id: int
     level_num: int
-    window: list[WindowsMessage]
+    levels: list[WindowsMessage]
 
     class Config:
         orm_mode = True

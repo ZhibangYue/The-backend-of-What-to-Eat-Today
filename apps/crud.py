@@ -214,3 +214,23 @@ def get_campus(db: Session):
 
 def get_level(db: Session, level: int):
     return db.query(Levels).filter(Levels.level == level).first()
+
+
+def get_levels_by_canteen_id(db: Session, canteen_id: str):
+    return db.query(Levels).filter(Levels.canteen_id == canteen_id).all()
+
+
+def get_windows_by_level_id(db: Session, level_id: str):
+    return db.query(Windows).filter(Windows.level_id == level_id).all()
+
+
+def get_canteen_by_canteen_id(db: Session, canteen_id: str):
+    return db.query(Canteens).filter(Canteens.canteen_id == canteen_id).first()
+
+
+def get_dishes_by_window_id(db: Session, window_id: str):
+    return db.query(Dishes).filter(Dishes.dish_id[0:6] == window_id).all()
+
+
+def get_dish_by_dish_id(db: Session, dish_id: str):
+    return db.query(Dishes).filter(Dishes.dish_id == dish_id).all()
