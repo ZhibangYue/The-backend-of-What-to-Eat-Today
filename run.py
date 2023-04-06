@@ -4,6 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from apps import background, models
 from apps.database import engine
 from apps.background import background
+# from apps.frontpage import frontpage
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -27,9 +28,8 @@ app.add_middleware(
 )
 
 app.include_router(background)
-
 app.include_router(background, prefix='/background', tags=['后台'])
-
+# app.include_router(frontpage, prefix='/frontpage', tags=['前台'])
 
 if __name__ == '__main__':
     uvicorn.run('run:app', reload=True)

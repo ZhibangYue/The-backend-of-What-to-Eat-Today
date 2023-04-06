@@ -218,9 +218,9 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
 
 
 @background.get("/canteens", status_code=200, response_description="got successfully", summary="获取餐厅信息")
-async def get_current_campus(page: int, limit: int, db: Session = Depends(get_db),
-                             current_manager: ManagerMessage = Depends(get_current_manager),
-                             ):
+async def get_canteens_by_page(page: int, limit: int, db: Session = Depends(get_db),
+                               current_manager: ManagerMessage = Depends(get_current_manager),
+                               ):
     canteens = get_canteens(db, page, limit)
     canteens_information = []
     levels_information = []
@@ -247,7 +247,7 @@ async def get_current_campus(page: int, limit: int, db: Session = Depends(get_db
                                },
                                "levels_information": levels_information}
         canteens_information.append(canteen_information)
-    return {"message": "success", "detail": "获取成功", "data": {canteens_information}}
+    return {"message": "success", "detail": "获取成功", "data": {"canteens_information": canteens_information}}
 
 
 # 删除餐厅
@@ -274,6 +274,28 @@ async def delete_current_canteen(canteen_id: str, db: Session = Depends(get_db),
     return {"message": "success", "detail": "删除成功", "data": {}}
 
 
+# 获取校区与其id的对应序列
+@background.get("/campus", status_code=200, response_description="got successfully", summary="获取校区与其id的对应序列")
+async def get_canteens_campus(db: Session = Depends(get_db),
+                              current_manager: ManagerMessage = Depends(get_current_manager)):
+    campuses = get_campus(db)
+    campuses_information = []
+    for campus in campuses:
+        campus_information = {
+            "campus_name": campus.campus_name,
+            "campus_id": campus.campus_id
+        }
+        campuses_information.append(campus_information)
+    return {"message": "success", "detail": "获取成功", "data": {"campus": campuses_information}}
+
+
+# 按校区筛选餐厅
+@background.get("/canteens/by-campus", status_code=200, response_description="got successfully",
+                summary="按校区筛选餐厅")
+async def get_canteens_by_campus():
+    return 0
+
+
 # 菜品管理接口
 # 增加新菜品
 @background.post("/dishes", status_code=201, response_description="added successfully", summary="增加新菜品")
@@ -288,13 +310,48 @@ async def add_new_dish(dish_message: DishMessage,
 # 修改菜品
 @background.put("/dishes", status_code=200, response_description="edited successfully", summary="修改菜品")
 async def edit_dish(current_manager: ManagerMessage = Depends(get_current_manager)):
-    return {"username": current_manager.username, "message": "success"}
+    return {"message": "success", "detail": "修改成功", "data": {}}
 
 
-# 获取菜品信息
+# 按页获取菜品信息
 @background.get("/dishes", status_code=200, response_description="got successfully", summary="获取菜品信息")
-async def get_current_dishes(current_manager: ManagerMessage = Depends(get_current_manager)):
-    return {"message": "success", "data": {}}
+async def get_dishes_by_page(page: int, limit: int, db: Session = Depends(get_db),
+                             current_manager: ManagerMessage = Depends(get_current_manager)):
+    dishes = get_dishes_page(db, page, limit)
+    dishes_information = []
+    for dish in dishes:
+        window = get_window_by_window_id(db, dish.window_id)
+        level = get_level_by_level_id(db, window.level_id)
+        canteen = get_canteen_by_canteen_id(db, level.canteen_id)
+        campus = get_campus_by_id(db, canteen.campus_id)
+        dish_information = {
+            "dish_name": dish.dish_name,
+            "dish_id": dish.dish_id,
+            "muslim": dish.muslim,
+            "date":
+                {
+                    "morning": dish.morning,
+                    "noon": dish.noon,
+                    "night": dish.night,
+                },
+            "position": {
+                "campus": {
+                    "campus_id": campus.campus_id,
+                    "campus_name": campus.campus_name,
+                },
+                "level": {
+                    "level_id": level.level_id,
+                    "level": level.level
+                },
+                "window":
+                    {
+                        "window_id": window.window_id,
+                        "window_name": window.window_name
+                    }
+            }
+        }
+        dishes_information.append(dish_information)
+    return {"message": "success", "data": {"dishes_information": dishes_information}}
 
 
 # 删除菜品
@@ -309,6 +366,36 @@ async def delete_current_dish(dish_id: str, db: Session = Depends(get_db),
     return {"message": "success", "detail": "删除成功", "data": {}}
 
 
+# 获取窗口及其id的序列
+@background.get("/windows", status_code=200, response_description="got successfully", summary="获取窗口及其id的序列")
+async def get_windows(db: Session = Depends(get_db), current_manager: ManagerMessage = Depends(get_current_manager)):
+    canteens = get_all_canteens(db)
+    canteens_information = []
+    levels_information = []
+    for canteen in canteens:
+        levels = get_levels_by_canteen_id(db, canteen.canteen_id)
+        for level in levels:
+            windows = get_windows_by_level_id(db, level.level_id)
+            windows_information = [{
+                "window": window.window,
+                "window_id": window.window_id
+            } for window in windows]
+            level_information = {
+                "level": level.level,
+                "windows_information": windows_information,
+            }
+            levels_information.append(level_information)
+        canteen_information = {"canteen_name": canteen.canteen_name,
+                               "canteen_id": canteen.canteen_id,
+                               "campus": {
+                                   "campus_name": get_campus_by_id(db, canteen.campus_id).campus_name,
+                                   "campus_id": canteen.campus_id,
+                               },
+                               "levels_information": levels_information}
+        canteens_information.append(canteen_information)
+    return {"message": "success", "detail": "获取成功", "data": {"canteens_information": canteens_information}}
+
+
 # 上传图片
 @background.post("/photos", status_code=201, response_description="added successfully", summary="上传图片")
 async def add_photo(photo: UploadFile, current_manager: ManagerMessage = Depends(get_current_manager),
@@ -319,7 +406,4 @@ async def add_photo(photo: UploadFile, current_manager: ManagerMessage = Depends
     file_path = dir_path + file_name
     async with aiofiles.open(file_path, "wb") as f:
         await f.write(await photo.read())
-    return {"message": "success", "detail": "上传成功", "data": file_path}
-
-# 获取图片
-# @background.get("photos")
+    return {"message": "success", "detail": "上传成功", "data": {"url": file_path}}

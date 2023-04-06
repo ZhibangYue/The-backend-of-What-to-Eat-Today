@@ -24,7 +24,8 @@ class Dishes(Base):
     morning = Column(Boolean)
     noon = Column(Boolean)
     night = Column(Boolean)
-    canteen_id = Column(String(2))  # ForeignKey("canteens.id")
+    canteen_id = Column(String(2))
+    window_id = Column(String(6), primary_key=True, index=True)
     muslim = Column(Boolean)  # 是否清真
     level = Column(Integer)  # 楼层   可改为tinyint
     window = Column(Integer)  # 窗口   可改为tinyint
@@ -51,7 +52,7 @@ class Canteens(Base):  # 餐厅
 
 class Campus(Base):
     __tablename__ = "campus"
-    campus_id = Column(Integer, primary_key=True, index=True)
+    campus_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     campus_name = Column(String(10), index=True)
     canteen_num = Column(Integer)
 
@@ -71,4 +72,5 @@ class Windows(Base):
     # 2位餐厅（校区编号+餐厅编号）id  + 2位楼层id +2位 窗口编号
     window_name = Column(String(10), index=True)
     dish_num = Column(Integer)
-    level_id = Column(String(4))  # ForeignKey("levels.id")
+    level_id = Column(String(4))
+    window = Column(Integer)

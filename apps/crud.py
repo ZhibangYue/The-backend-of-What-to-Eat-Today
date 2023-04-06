@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from .models import *
 from .schemas import *
+from .database import *
 
 
 # 具体变量的含义参见 models.py
@@ -21,6 +22,8 @@ def get_manager(db: Session, username: str):
     return db.query(Managers).filter(Managers.username == username).first()
 
 
+# 校区函数
+# 增加校区
 def add_campus(db: Session, name: str):
     campus_dict = {
         "campus_name": name,
@@ -32,15 +35,17 @@ def add_campus(db: Session, name: str):
     db.refresh(campus)
 
 
-# 可以判断餐厅是否存在
+# 校区名查校区
 def get_campus_by_name(db: Session, name: str):
     return db.query(Campus).filter(Campus.campus_name == name).first()
 
 
+# 校区id查校区
 def get_campus_by_id(db: Session, campus_id: int):
     return db.query(Campus).filter(Campus.campus_id == campus_id).first()
 
 
+# 餐厅函数
 # 对餐厅表进行添加
 def add_canteen(db: Session, canteen_message: CanteenMessage):
     campus = get_campus_by_id(db, canteen_message.campus_id)
@@ -60,9 +65,26 @@ def add_canteen(db: Session, canteen_message: CanteenMessage):
     db.refresh(canteen)
 
 
-# 可验证餐厅名
+# 餐厅名查餐厅
 def get_canteen_by_name(db: Session, name: str):
     return db.query(Canteens).filter(Canteens.canteen_name == name).first()
+
+
+# 按页获取餐厅
+def get_canteens(db: Session, page: int, limit: int):
+    skip = (page - 1) * limit
+    return db.query(Canteens).offset(skip).limit(limit).all()
+
+
+# 按校区获取餐厅
+def get_canteens_filter_campus(db: Session, page: int, limit: int, campus_id: int):
+    skip = (page - 1) * limit
+    return db.query(Canteens).filter(Canteens).filter(Canteens.campus_id == campus_id).offset(skip).limit(limit).all()
+
+
+# 获取所有餐厅
+def get_all_canteens(db: Session):
+    return db.query(Canteens).all()
 
 
 # 对层数表进行添加
@@ -99,7 +121,8 @@ def add_window(db: Session, name: str, level_id: str, window: int):
         "window_name": name,
         "window_id": window_id,
         "dish_num": 0,
-        "level_id": level_id
+        "level_id": level_id,
+        "window": window
     }
     window_x = Windows(**window_dict)
     db.add(window_x)
@@ -154,6 +177,7 @@ def add_dish(db: Session, dish_message: DishMessage):
         "noon": dish_message.noon,
         "night": dish_message.night,
         "canteen_id": dish_message.canteen_id,
+        "window_id": window.window_id,
         "muslim": dish_message.muslim,
         "photos": dish_message.photos,
         "spare_photos": dish_message.spare_photos,
@@ -198,14 +222,6 @@ def get_dishes_filter_night(db: Session, page: int, limit: int):
 
 
 # def get_canteens(db: Session, page: int, limit: int):
-def get_canteens(db: Session, page: int, limit: int):
-    skip = (page - 1) * limit
-    return db.query(Canteens).offset(skip).limit(limit).all()
-
-
-def get_canteens_filter_campus(db: Session, page: int, limit: int, campus_id: int):
-    skip = (page - 1) * limit
-    return db.query(Canteens).filter(Canteens).filter(Canteens.campus_id == campus_id).offset(skip).limit(limit).all()
 
 
 def get_campus(db: Session):
@@ -229,8 +245,16 @@ def get_canteen_by_canteen_id(db: Session, canteen_id: str):
 
 
 def get_dishes_by_window_id(db: Session, window_id: str):
-    return db.query(Dishes).filter(Dishes.dish_id[0:6] == window_id).all()
+    return db.query(Dishes).filter(Dishes.window_id == window_id).all()
 
 
 def get_dish_by_dish_id(db: Session, dish_id: str):
     return db.query(Dishes).filter(Dishes.dish_id == dish_id).all()
+
+
+def get_window_by_window_id(db: Session, window_id: str):
+    return db.query(Windows).filter(Windows.window_id == window_id).first()
+
+
+def get_level_by_level_id(db: Session, level_id: str):
+    return db.query(Levels).filter(Levels.level_id == level_id).first()
