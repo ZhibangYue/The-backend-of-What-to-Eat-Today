@@ -79,7 +79,7 @@ def get_canteens(db: Session, page: int, limit: int):
 # 按校区获取餐厅
 def get_canteens_filter_campus(db: Session, page: int, limit: int, campus_id: int):
     skip = (page - 1) * limit
-    return db.query(Canteens).filter(Canteens).filter(Canteens.campus_id == campus_id).offset(skip).limit(limit).all()
+    return db.query(Canteens).filter(Canteens.campus_id == campus_id).offset(skip).limit(limit).all()
 
 
 # 获取所有餐厅
@@ -249,7 +249,7 @@ def get_dishes_by_window_id(db: Session, window_id: str):
 
 
 def get_dish_by_dish_id(db: Session, dish_id: str):
-    return db.query(Dishes).filter(Dishes.dish_id == dish_id).all()
+    return db.query(Dishes).filter(Dishes.dish_id == dish_id).first()
 
 
 def get_window_by_window_id(db: Session, window_id: str):

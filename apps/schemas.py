@@ -103,3 +103,37 @@ class DishMessage(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class EditDishMessage(BaseModel):
+    dish_id: str
+    name: str
+    morning: bool
+    noon: bool
+    night: bool
+    muslim: bool
+    photos: str
+    spare_photos: str
+    price: float
+    size: str
+
+    class Config:
+        orm_mode = True
+
+
+class EditCanteenMessage(BaseModel):
+    canteen_id: str
+    canteen_name: str
+    level_num: int
+    levels: list[WindowsMessage]
+
+    class Config:
+        orm_mode = True
+
+
+class DateMessage(BaseModel):
+    page: int
+    limit: int
+    morning: bool
+    noon: bool
+    night: bool
