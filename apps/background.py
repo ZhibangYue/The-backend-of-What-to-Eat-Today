@@ -218,8 +218,6 @@ async def edit_canteens(canteen_message: EditCanteenMessage, db: Session = Depen
 
 
 # 按页获取餐厅信息
-
-
 @background.get("/canteens", status_code=200, response_description="got successfully", summary="按页获取餐厅信息")
 async def get_canteens_by_page(page: int, limit: int, db: Session = Depends(get_db),
                                current_manager: ManagerMessage = Depends(get_current_manager),
@@ -278,10 +276,8 @@ async def get_canteens_by_campus(page: int, limit: int, campus_id: int, db: Sess
     return {"message": "success", "detail": "获取成功", "data": {"canteens_information": canteens_information}}
 
 
-#
-
-
 # 菜品管理接口
+
 # 增加新菜品
 @background.post("/dishes", status_code=201, response_description="added successfully", summary="增加新菜品")
 async def add_new_dish(dish_message: DishMessage,
