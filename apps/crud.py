@@ -258,3 +258,72 @@ def get_window_by_window_id(db: Session, window_id: str):
 
 def get_level_by_level_id(db: Session, level_id: str):
     return db.query(Levels).filter(Levels.level_id == level_id).first()
+
+
+# 构造按页返回菜品信息的数据结构
+def get_dishes_message(db: Session, dishes: list):
+    dishes_information = []
+    for dish in dishes:
+        window = get_window_by_window_id(db, dish.window_id)
+        level = get_level_by_level_id(db, window.level_id)
+        canteen = get_canteen_by_canteen_id(db, level.canteen_id)
+        campus = get_campus_by_id(db, canteen.campus_id)
+        dish_information = {
+            "dish_name": dish.dish_name,
+            "dish_id": dish.dish_id,
+            "muslim": dish.muslim,
+            "date":
+                {
+                    "morning": dish.morning,
+                    "noon": dish.noon,
+                    "night": dish.night,
+                },
+            "position":
+                {
+                    "campus": {
+                        "campus_id": campus.campus_id,
+                        "campus_name": campus.campus_name,
+                    },
+                    "level": {
+                        "level_id": level.level_id,
+                        "level": level.level
+                    },
+                    "window":
+                        {
+                            "window_id": window.window_id,
+                            "window_name": window.window_name,
+                        }
+                }
+        }
+        dishes_information.append(dish_information)
+    return dishes_information
+
+
+# 构造按页返回餐厅信息的数据结构
+def get_canteens_message(db: Session, canteens: list):
+    canteens_information = []
+    levels_information = []
+    for canteen in canteens:
+        levels = get_levels_by_canteen_id(db, canteen.canteen_id)
+        for level in levels:
+            windows = get_windows_by_level_id(db, level.level_id)
+            windows_information = [{
+                "windows_name": window.window_name,
+                "windows_id": window.window_id
+            } for window in windows]
+            level_information = {
+                "level_id": level.level_id,
+                "windows_num": level.window_num,
+                "windows_information": windows_information,
+            }
+            levels_information.append(level_information)
+        canteen_information = {"canteen_name": canteen.canteen_name,
+                               "canteen_id": canteen.canteen_id,
+                               "level_num": canteen.level_num,
+                               "campus": {
+                                   "campus_name": get_campus_by_id(db, canteen.campus_id).campus_name,
+                                   "campus_id": canteen.campus_id,
+                               },
+                               "levels_information": levels_information}
+        canteens_information.append(canteen_information)
+    return canteens_information
