@@ -104,14 +104,22 @@ def get_canteen_by_canteen_id(db: Session, canteen_id: str):
 
 
 # 对层数表进行添加
-def add_level(db: Session, canteen_id: str, level: int, window_num: int):
+
+# 由餐厅id，楼层序号得到楼层id
+def get_level_id(canteen_id: str, level: int):
     if level > 0:
         a = "0"
     else:
         a = "1"
         level = -level
+    level_id = canteen_id + a + str(level)
+    return level_id
+
+
+def add_level(db: Session, canteen_id: str, level: int, window_num: int):
+    level_id = get_level_id(canteen_id, level)
     level_dict = {
-        "level_id": canteen_id + a + str(level),
+        "level_id": level_id,
         "level": level,
         "window_num": window_num,
         "canteen_id": canteen_id
