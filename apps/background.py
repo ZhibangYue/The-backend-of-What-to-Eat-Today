@@ -62,7 +62,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 # 依赖token登录的url
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="./token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/background/token")
 
 
 # 创建生成新地访问令牌的工具函数
