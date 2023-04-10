@@ -1,3 +1,6 @@
+from operator import attrgetter
+
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from .models import *
 from .schemas import *
@@ -308,6 +311,8 @@ def get_dishes_message(db: Session, dishes: list):
                 }
         }
         dishes_information.append(dish_information)
+    if not dishes_information:
+        raise HTTPException(status_code=404, detail="获取失败，无更多信息")
     return dishes_information
 
 
@@ -324,12 +329,13 @@ def get_canteens_message(db: Session, canteens: list):
                 "windows_id": window.window_id
             } for window in windows]
             level_information = {
-                "level_id": level.level_id,
                 "level": level.level,
+                "level_id": level.level_id,
                 "windows_num": level.window_num,
                 "windows_information": windows_information,
             }
             levels_information.append(level_information)
+        sorted_levels_information = sorted(levels_information, key=lambda x: x['level'], reverse=False)
         canteen_information = {"canteen_name": canteen.canteen_name,
                                "canteen_id": canteen.canteen_id,
                                "level_num": canteen.level_num,
@@ -337,6 +343,9 @@ def get_canteens_message(db: Session, canteens: list):
                                    "campus_name": get_campus_by_id(db, canteen.campus_id).campus_name,
                                    "campus_id": canteen.campus_id,
                                },
-                               "levels_information": levels_information}
+                               "levels_information": sorted_levels_information
+                               }
         canteens_information.append(canteen_information)
+    if not canteens_information:
+        raise HTTPException(status_code=404, detail="获取失败，无更多信息")
     return canteens_information

@@ -294,7 +294,7 @@ async def delete_current_canteen(canteen_id: str, db: Session = Depends(get_db),
     for level in levels:
         windows = get_windows_by_level_id(db, level.level_id)
         for window in windows:
-            dishes = get_dishes_by_window_id(window.window_id)
+            dishes = get_dishes_by_window_id(db, window.window_id)
             for dish in dishes:
                 db.delete(dish)
                 db.commit()
