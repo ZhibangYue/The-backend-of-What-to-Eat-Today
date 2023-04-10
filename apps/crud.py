@@ -1,5 +1,5 @@
 from operator import attrgetter
-
+import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from .models import *
@@ -202,7 +202,8 @@ def add_dish(db: Session, dish_message: DishMessage):
         "level": dish_message.level,
         "window": dish_message.window,
         "price": dish_message.price,
-        "size": dish_message.size
+        "size": dish_message.size,
+        "likes": 0
     }
     dish = Dishes(**dish_dict)
     db.add(dish)
@@ -349,3 +350,68 @@ def get_canteens_message(db: Session, canteens: list):
     if not canteens_information:
         raise HTTPException(status_code=404, detail="获取失败，无更多信息")
     return canteens_information
+
+
+# 前台
+def get_dish_message(db: Session, dishes: list):
+    dishes_information = []
+    for dish in dishes:
+        window = get_window_by_window_id(db, dish.window_id)
+        level = get_level_by_level_id(db, window.level_id)
+        canteen = get_canteen_by_canteen_id(db, level.canteen_id)
+        campus = get_campus_by_id(db, canteen.campus_id)
+        dish_information = {
+            "name": dish.dish_name,
+            "price": dish.price,
+            "position": campus.campus_name,
+            "image": dish.photos,
+            "labels": [""]
+        }
+        dishes_information.append(dish_information)
+    return dishes_information
+
+
+# def random_draw(db: Session, canteen_name: str, time: str):
+#     listx = get_dishes_by_name_and_time(db, canteen_name, time)
+#     lx = len(listx)
+#     r = random.randint(0, lx)
+#     return listx[r]
+
+
+# def get_canteen_by_name(db: Session, canteen_name: str):
+#     return db.query(Canteens).filter(Canteens.canteen_name == canteen_name).first()
+
+
+def get_dishes_by_canteen_and_level(db: Session, canteen_id: str, level: int):
+    # canteen = get_canteen_by_name(db, canteen_name)
+    # canteen_id = canteen.canteen_id
+    return db.query(Dishes).filter(Dishes.canteen_id == canteen_id, Dishes.level == level).all()
+
+
+def get_dishes_by_name_and_time(db: Session, canteen_id: str, timex: str):
+    # canteen = get_canteen_by_name(db, canteen_name)
+    # canteen_id = canteen.canteen_id
+    if timex == "早":
+        return db.query(Dishes).filter(Dishes.canteen_id == canteen_id, Dishes.morning == 1).all()
+    elif timex == "中":
+        return db.query(Dishes).filter(Dishes.canteen_id == canteen_id, Dishes.noon == 1).all()
+    else:
+        return db.query(Dishes).filter(Dishes.canteen_id == canteen_id, Dishes.night == 1).all()
+
+
+def get_like(db: Session, openid: int, dish_id: str):
+    return db.query(Like).filter(Like.openid == openid, Like.dish_id == dish_id).first()
+
+
+def add_like(db: Session, openid: int, dish_id: str):
+    date_ = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    like_dict = {
+        "openid": openid,
+        "dish_id": dish_id,
+        "date_": date_
+    }
+
+    like = Like(**like_dict)
+    db.add(like)
+    db.commit()
+    db.refresh(like)
