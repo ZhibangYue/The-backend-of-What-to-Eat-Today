@@ -314,9 +314,9 @@ def get_dishes_message(db: Session, dishes: list):
 # 构造按页返回餐厅信息的数据结构
 def get_canteens_message(db: Session, canteens: list):
     canteens_information = []
-    levels_information = []
     for canteen in canteens:
         levels = get_levels_by_canteen_id(db, canteen.canteen_id)
+        levels_information = []
         for level in levels:
             windows = get_windows_by_level_id(db, level.level_id)
             windows_information = [{
