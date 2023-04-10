@@ -325,6 +325,7 @@ def get_canteens_message(db: Session, canteens: list):
             } for window in windows]
             level_information = {
                 "level_id": level.level_id,
+                "level": level.level,
                 "windows_num": level.window_num,
                 "windows_information": windows_information,
             }
