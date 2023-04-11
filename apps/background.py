@@ -349,9 +349,9 @@ async def add_new_dish(dish_message: DishMessage,
 
 # 修改菜品
 @background.put("/dishes", status_code=200, response_description="edited successfully", summary="修改菜品信息")
-async def edit_dish(dish_message: EditDishMessage, db: Session = Depends(get_db),
+async def edit_dish(dish_message: DishMessage, dish_id: str = Body(), db: Session = Depends(get_db),
                     current_manager: ManagerMessage = Depends(get_current_manager)):
-    dish = get_dish_by_dish_id(db, dish_message.dish_id)
+    dish = get_dish_by_dish_id(db, dish_id)
     if not dish:
         raise HTTPException(status_code=404, detail="菜品不存在")
     new_window = get_window(db, dish_message.canteen_id, dish_message.level, dish_message.window)
@@ -369,7 +369,7 @@ async def edit_dish(dish_message: EditDishMessage, db: Session = Depends(get_db)
     else:
         db.delete(dish)
         db.commit()
-        add_dish(db, DishMessage(dish_message))
+        add_dish(db, dish_message)
     return {"message": "success", "detail": "修改成功", "data": {}}
 
 
