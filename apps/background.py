@@ -192,6 +192,9 @@ async def add_new_canteens(canteen_message: CanteenMessage, db: Session = Depend
     canteen = get_canteen_by_name(db, canteen_message.canteen_name)
     if canteen:
         raise HTTPException(status_code=400, detail="餐厅已存在")
+    campus = get_campus_by_id(db, canteen_message.campus_id)
+    if campus.canteen_num > 8:
+        raise HTTPException(status_code=400, detail="添加失败，该校区餐厅编号已满，请联系开发人员")
     add_canteen(db, canteen_message)
     new_canteen = get_canteen_by_name(db, canteen_message.canteen_name)
     for level in canteen_message.levels:
@@ -351,14 +354,22 @@ async def edit_dish(dish_message: EditDishMessage, db: Session = Depends(get_db)
     dish = get_dish_by_dish_id(db, dish_message.dish_id)
     if not dish:
         raise HTTPException(status_code=404, detail="菜品不存在")
-    dish.dish_name = dish_message.name
-    dish.morning = dish_message.morning
-    dish.noon = dish_message.noon
-    dish.night = dish_message.night
-    dish.muslim = dish_message.muslim
-    dish.price = dish_message.price
-    db.commit()
-    db.refresh(dish)
+    new_window = get_window(db, dish_message.canteen_id, dish_message.level, dish_message.window)
+    if not new_window:
+        raise HTTPException(status_code=404, detail="此窗口不存在")
+    if new_window.window_id == dish.window_id:
+        dish.dish_name = dish_message.name
+        dish.morning = dish_message.morning
+        dish.noon = dish_message.noon
+        dish.night = dish_message.night
+        dish.muslim = dish_message.muslim
+        dish.price = dish_message.price
+        db.commit()
+        db.refresh(dish)
+    else:
+        db.delete(dish)
+        db.commit()
+        add_dish(db, DishMessage(dish_message))
     return {"message": "success", "detail": "修改成功", "data": {}}
 
 

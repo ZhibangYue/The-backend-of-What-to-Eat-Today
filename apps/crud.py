@@ -187,6 +187,8 @@ def make_dish_id(db: Session, window_id: str):
 # 对菜品表进行添加
 def add_dish(db: Session, dish_message: DishMessage):
     window = get_window(db, dish_message.canteen_id, dish_message.level, dish_message.window)
+    if window.dish_num > 998:
+        raise HTTPException(status_code=400, detail="添加失败，该窗口菜品编号已满，请联系开发人员")
     dish_id = make_dish_id(db, window.window_id)
     dish_dict = {
         "dish_id": dish_id,

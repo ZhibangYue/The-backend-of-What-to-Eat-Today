@@ -111,10 +111,13 @@ class EditDishMessage(BaseModel):
     morning: bool
     noon: bool
     night: bool
+    canteen_id: str
     muslim: bool
     photos: str
     spare_photos: str
     price: float
+    level: int
+    window: int
 
     class Config:
         orm_mode = True
