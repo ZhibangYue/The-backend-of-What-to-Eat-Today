@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, Float
+from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, Float, DateTime
 from sqlalchemy.orm import relationship
 from .database import Base
 from typing import Union
@@ -7,7 +7,7 @@ from typing import Union
 # import MySQLdb
 # import sys
 
-
+# 后台表
 class Managers(Base):
     __tablename__ = "managers"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -74,3 +74,18 @@ class Windows(Base):
     dish_num = Column(Integer)
     level_id = Column(String(4))
     window = Column(Integer)
+
+
+# 前台表
+class Users(Base):
+    __tablename__ = "users"
+    openid = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_name = Column(String(15), unique=True)
+
+
+class Like(Base):
+    __tablename__ = "like"
+    unique_identifier=Column(Integer,primary_key=True, index=True)
+    openid = Column(Integer, index=True)  # user id
+    dish_id = Column(String(9), index=True)
+    date_ = Column(DateTime)
