@@ -1,8 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from apps import background, models
+from apps.database import engine
+from apps.background import background
+from apps.frontpage import frontpage
 
-from apps import background
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title='今天吃什么',
@@ -25,7 +29,7 @@ app.add_middleware(
 
 
 app.include_router(background, prefix='/background', tags=['后台'])
-
+app.include_router(frontpage, prefix='/frontpage', tags=['前台'])
 
 if __name__ == '__main__':
     uvicorn.run('run:app', reload=True)
