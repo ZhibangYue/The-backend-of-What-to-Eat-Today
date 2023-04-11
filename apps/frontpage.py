@@ -11,8 +11,8 @@ from .background import *
 frontpage = APIRouter()
 
 # 鉴权需要
-APPID = "wx1f553023215c6b9d"
-SECRET = "2a43ece6de1da0be3c1cd5e6f446fb10"
+APPID = "wx0d164561b0573e5c"
+SECRET = "6e85660d10f135e6732b79125626d4bd"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
@@ -137,10 +137,9 @@ def get_wx(code):
     "/signup",
     summary="注册",
     status_code=201,
-    response_description="Created Successfully",
-    tags=["注册"],
+    response_description="Created Successfully"
 )
-def login(user: UserBase, db=Depends(get_db)):
+def login(user: int, db=Depends(get_db)):
     """
     注册接口，用户初次使用需注册，将学号、姓名、手机号存入数据库，同时返回token，有效期为30天
     - :param user:请求体参数，包括学号student_number（str），name（str）、phone（str）
@@ -208,9 +207,9 @@ def get_token(code: str):
 
 
 @frontpage.get("/dishes", status_code=200, response_description="got successfully", summary="获取菜品信息")
-async def get_this_dishes(openid: int, db: Session = Depends(get_db), level: int = 1, canteen_id: str = '0'):
+async def get_this_dishes(openid: str, db: Session = Depends(get_db), level: int = 1, canteen_id: str = '0'):
     dishes = get_dishes_by_canteen_and_level(db, canteen_id, level)
-    dishes_information = get_dish_message(db, openid, dishes)
+    dishes_information = get_dish_message(db, dishes, openid)
     return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information}}
 
 
@@ -220,16 +219,18 @@ async def get_this_dishes(openid: int, db: Session = Depends(get_db), level: int
 #     return random_draw(db, canteen_id, timex)
 
 @frontpage.get("/draw_dishes", status_code=200, response_description="got successfully", summary="随机抽取菜品")
-async def draw_dish(openid: int, db: Session = Depends(get_db), canteen_id: str = '01', timex: str = '0'):
+async def draw_dish(db: Session = Depends(get_db), canteen_id: str = '01', timex: str = '0'):
     dishes = get_dishes_by_name_and_time(db, canteen_id, timex)
-    dishes_information = get_dish_message(db, openid, dishes)
+    dishes_information = get_dish_message(db, dishes)
     return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information}}
 
 
 @frontpage.get("/likes", status_code=200, response_description="got successfully", summary="查询单个菜品点赞")
-async def get_like_status(dish_id: str, openid: int, db: Session = Depends(get_db)):
+async def get_like_status(dish_id: str, openid: str, db: Session = Depends(get_db)):
     like = get_like(db, openid, dish_id)
     dish = get_dish_by_dish_id(db, dish_id)
+    if not dish:
+        raise HTTPException(status_code=404, detail="菜品不存在")
     if not like:
         return {"message": "success", "detail": "获取成功", "data": {"like_information": {
             "like": False,
@@ -244,8 +245,8 @@ async def get_like_status(dish_id: str, openid: int, db: Session = Depends(get_d
         }}}
 
 
-@frontpage.put("/likes", status_code=200, response_description="changed successfully", summary="点赞或取消")
-async def chang_like_status(dish_id: str, openid: int, db: Session = Depends(get_db)):
+@frontpage.put("/likes", status_code=200, response_description="changed successfully", summary="点赞或取消赞")
+async def chang_like_status(dish_id: str, openid: str, db: Session = Depends(get_db)):
     like = get_like(db, openid, dish_id)
     dish = get_dish_by_dish_id(db, dish_id)
     if not like:

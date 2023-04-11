@@ -209,7 +209,7 @@ async def edit_canteens(canteen_message: EditCanteenMessage, db: Session = Depen
                         current_manager: ManagerMessage = Depends(get_current_manager)):
     canteen = get_canteen_by_canteen_id(db, canteen_message.canteen_id)
     if not canteen:
-        raise HTTPException(status_code=400, detail="餐厅不存在")
+        raise HTTPException(status_code=404, detail="餐厅不存在")
     canteen.canteen_name = canteen_message.canteen_name
     canteen.level_num = canteen_message.level_num
     db.commit()
@@ -350,14 +350,13 @@ async def edit_dish(dish_message: EditDishMessage, db: Session = Depends(get_db)
                     current_manager: ManagerMessage = Depends(get_current_manager)):
     dish = get_dish_by_dish_id(db, dish_message.dish_id)
     if not dish:
-        raise HTTPException(status_code=400, detail="菜品不存在")
+        raise HTTPException(status_code=404, detail="菜品不存在")
     dish.dish_name = dish_message.name
     dish.morning = dish_message.morning
     dish.noon = dish_message.noon
     dish.night = dish_message.night
     dish.muslim = dish_message.muslim
     dish.price = dish_message.price
-    dish.size = dish_message.size
     db.commit()
     db.refresh(dish)
     return {"message": "success", "detail": "修改成功", "data": {}}
@@ -378,7 +377,7 @@ async def delete_current_dish(dish_id: str, db: Session = Depends(get_db),
                               current_manager: ManagerMessage = Depends(get_current_manager)):
     dish = get_dish_by_dish_id(db, dish_id)
     if not dish:
-        raise HTTPException(status_code=400, detail="菜品不存在")
+        raise HTTPException(status_code=404, detail="菜品不存在")
     db.delete(dish)
     db.commit()
 

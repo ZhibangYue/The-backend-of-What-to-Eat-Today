@@ -98,7 +98,6 @@ class DishMessage(BaseModel):
     photos: str
     spare_photos: str
     price: float
-    size: str
     level: int
     window: int
 
@@ -116,7 +115,6 @@ class EditDishMessage(BaseModel):
     photos: str
     spare_photos: str
     price: float
-    size: str
 
     class Config:
         orm_mode = True

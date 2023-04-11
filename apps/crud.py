@@ -202,7 +202,6 @@ def add_dish(db: Session, dish_message: DishMessage):
         "level": dish_message.level,
         "window": dish_message.window,
         "price": dish_message.price,
-        "size": dish_message.size,
         "likes": 0
     }
     dish = Dishes(**dish_dict)
@@ -288,6 +287,7 @@ def get_dishes_message(db: Session, dishes: list):
             "dish_name": dish.dish_name,
             "dish_id": dish.dish_id,
             "muslim": dish.muslim,
+            "prize": dish.price,
             "date":
                 {
                     "morning": dish.morning,
@@ -353,7 +353,7 @@ def get_canteens_message(db: Session, canteens: list):
 
 
 # 前台
-def get_user_openid(db: Session, openid: int):
+def get_user_openid(db: Session, openid: str):
     return db.query(Users).filter(Users.openid == openid).first()
 
 
@@ -385,11 +385,11 @@ def get_dishes_by_name_and_time(db: Session, canteen_id: str, timex: str):
         return db.query(Dishes).filter(Dishes.canteen_id == canteen_id, Dishes.night == 1).all()
 
 
-def get_like(db: Session, openid: int, dish_id: str):
+def get_like(db: Session, openid: str, dish_id: str):
     return db.query(Like).filter(Like.openid == openid, Like.dish_id == dish_id).first()
 
 
-def add_like(db: Session, openid: int, dish_id: str):
+def add_like(db: Session, openid: str, dish_id: str):
     date_ = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
     like_dict = {
         "openid": openid,
@@ -404,35 +404,43 @@ def add_like(db: Session, openid: int, dish_id: str):
 
 
 # 按页获取菜品信息的格式
-def get_dish_message(db: Session, openid: int, dishes: list):
+def get_dish_message(db: Session, dishes: list, openid: str = None):
     dishes_information = []
     for dish in dishes:
         window = get_window_by_window_id(db, dish.window_id)
         level = get_level_by_level_id(db, window.level_id)
         canteen = get_canteen_by_canteen_id(db, level.canteen_id)
         campus = get_campus_by_id(db, canteen.campus_id)
-        like = get_like(db, openid, dish.dish_id)
-        if not like:
-            like_information = {
-                "like": False,
-                "time": None,
-                "like_num": dish.likes
-            }
-        if like:
-            like_information = {
-                "like": True,
-                "time": like.date_,
-                "like_num": dish.likes
-            }
+        if openid:
+            like = get_like(db, openid, dish.dish_id)
+            if not like:
+                like_information = {
+                    "like": False,
+                    "time": None,
+                    "like_num": dish.likes
+                }
+            if like:
+                like_information = {
+                    "like": True,
+                    "time": like.date_,
+                    "like_num": dish.likes
+                }
+            dish_information = {
+                "name": dish.dish_name,
+                "price": dish.price,
+                "position": campus.campus_name,
+                "image": dish.photos,
+                "labels": [""],
+                "like_information": like_information
 
-        dish_information = {
-            "name": dish.dish_name,
-            "price": dish.price,
-            "position": campus.campus_name,
-            "image": dish.photos,
-            "labels": [""],
-            "like_information": like_information
-
-        }
+            }
+        else:
+            dish_information = {
+                "name": dish.dish_name,
+                "price": dish.price,
+                "position": campus.campus_name,
+                "image": dish.photos,
+                "labels": [""]
+            }
         dishes_information.append(dish_information)
     return dishes_information

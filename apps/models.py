@@ -30,7 +30,6 @@ class Dishes(Base):
     level = Column(Integer)  # 楼层   可改为tinyint
     window = Column(Integer)  # 窗口   可改为tinyint
     price = Column(Float)
-    size = Column(String(5))
 
     """
     ！！！！！！！改为通过id分解   2位餐厅（校区编号+餐厅编号）id  + 2位楼层id +2位 窗口编号 + 3位dish编号！！！！！！！
@@ -79,13 +78,14 @@ class Windows(Base):
 # 前台表
 class Users(Base):
     __tablename__ = "users"
-    openid = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    openid = Column(String(90), primary_key=True, index=True)
     user_name = Column(String(15), unique=True)
 
 
 class Like(Base):
     __tablename__ = "like"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    openid = Column(Integer, index=True)  # user id
+    openid = Column(String(90), index=True)
     dish_id = Column(String(9), index=True)
     date_ = Column(DateTime)
