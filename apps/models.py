@@ -85,7 +85,7 @@ class Users(Base):
 
 class Like(Base):
     __tablename__ = "like"
-    unique_identifier=Column(Integer,primary_key=True, index=True)
+    unique_identifier=Column(Integer,primary_key=True, index=True, autoincrement=True)
     openid = Column(Integer, index=True)  # user id
     dish_id = Column(String(9), index=True)
     date_ = Column(DateTime)
