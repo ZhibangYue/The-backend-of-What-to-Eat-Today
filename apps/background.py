@@ -364,6 +364,8 @@ async def edit_dish(dish_message: DishMessage, dish_id: str = Body(), db: Sessio
         dish.night = dish_message.night
         dish.muslim = dish_message.muslim
         dish.price = dish_message.price
+        dish.photos = dish_message.photos
+        dish.spare_photos = dish_message.spare_photos
         db.commit()
         db.refresh(dish)
     else:
