@@ -353,22 +353,6 @@ def get_canteens_message(db: Session, canteens: list):
 
 
 # 前台
-def get_dish_message(db: Session, dishes: list):
-    dishes_information = []
-    for dish in dishes:
-        window = get_window_by_window_id(db, dish.window_id)
-        level = get_level_by_level_id(db, window.level_id)
-        canteen = get_canteen_by_canteen_id(db, level.canteen_id)
-        campus = get_campus_by_id(db, canteen.campus_id)
-        dish_information = {
-            "name": dish.dish_name,
-            "price": dish.price,
-            "position": campus.campus_name,
-            "image": dish.photos,
-            "labels": [""]
-        }
-        dishes_information.append(dish_information)
-    return dishes_information
 
 
 # def random_draw(db: Session, canteen_name: str, time: str):
@@ -415,3 +399,38 @@ def add_like(db: Session, openid: int, dish_id: str):
     db.add(like)
     db.commit()
     db.refresh(like)
+
+
+# 按页获取菜品信息的格式
+def get_dish_message(db: Session, openid: int, dishes: list):
+    dishes_information = []
+    for dish in dishes:
+        window = get_window_by_window_id(db, dish.window_id)
+        level = get_level_by_level_id(db, window.level_id)
+        canteen = get_canteen_by_canteen_id(db, level.canteen_id)
+        campus = get_campus_by_id(db, canteen.campus_id)
+        like = get_like(db, openid, dish.dish_id)
+        if not like:
+            like_information = {
+                "like": False,
+                "time": None,
+                "like_num": dish.likes
+            }
+        if like:
+            like_information = {
+                "like": True,
+                "time": like.date_,
+                "like_num": dish.likes
+            }
+
+        dish_information = {
+            "name": dish.dish_name,
+            "price": dish.price,
+            "position": campus.campus_name,
+            "image": dish.photos,
+            "labels": [""],
+            "like_information": like_information
+
+        }
+        dishes_information.append(dish_information)
+    return dishes_information
