@@ -353,6 +353,8 @@ def get_canteens_message(db: Session, canteens: list):
 
 
 # 前台
+def get_user_openid(db: Session, openid: int):
+    return db.query(Users).filter(Users.openid == openid).first()
 
 
 # def random_draw(db: Session, canteen_name: str, time: str):
