@@ -434,9 +434,9 @@ async def get_dishes_by_time(page: int, limit: int, morning: bool, noon: bool, n
 async def get_windows(db: Session = Depends(get_db), current_manager: ManagerMessage = Depends(get_current_manager)):
     canteens = get_all_canteens(db)
     canteens_information = []
-    levels_information = []
     for canteen in canteens:
         levels = get_levels_by_canteen_id(db, canteen.canteen_id)
+        levels_information = []
         for level in levels:
             windows = get_windows_by_level_id(db, level.level_id)
             windows_information = [{
