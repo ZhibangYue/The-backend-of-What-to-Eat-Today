@@ -288,6 +288,8 @@ def get_dishes_message(db: Session, dishes: list):
             "dish_id": dish.dish_id,
             "muslim": dish.muslim,
             "prize": dish.price,
+            "photo": dish.photos,
+            "spare_photos": dish.spare_photos,
             "date":
                 {
                     "morning": dish.morning,
