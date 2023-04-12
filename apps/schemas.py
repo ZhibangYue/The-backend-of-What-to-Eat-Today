@@ -124,6 +124,7 @@ class EditDishMessage(BaseModel):
 
 
 class EditCanteenMessage(BaseModel):
+    campus_id: int
     canteen_id: str
     canteen_name: str
     level_num: int
@@ -131,6 +132,3 @@ class EditCanteenMessage(BaseModel):
 
     class Config:
         orm_mode = True
-
-
-

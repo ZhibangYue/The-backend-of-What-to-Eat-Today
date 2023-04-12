@@ -206,76 +206,6 @@ async def add_new_canteens(canteen_message: CanteenMessage, db: Session = Depend
     return {"message": "success", "detail": "添加成功", "data": {}}
 
 
-# 修改餐厅
-@background.put("/canteens", status_code=200, response_description="edited successfully", summary="修改餐厅信息")
-async def edit_canteens(canteen_message: EditCanteenMessage, db: Session = Depends(get_db),
-                        current_manager: ManagerMessage = Depends(get_current_manager)):
-    canteen = get_canteen_by_canteen_id(db, canteen_message.canteen_id)
-    if not canteen:
-        raise HTTPException(status_code=404, detail="餐厅不存在")
-    canteen.canteen_name = canteen_message.canteen_name
-    canteen.level_num = canteen_message.level_num
-    db.commit()
-    db.refresh(canteen)
-    new_levels_id = []
-    for level in canteen_message.levels:
-        new_level_id = get_level_id(canteen_message.canteen_id, level.level)
-        new_levels_id.append(new_level_id)
-        old_level = get_level_by_level_id(db, new_level_id)
-        if old_level:
-            old_level.window_num = level.windows_num
-            db.commit()
-            db.refresh(old_level)
-        if not old_level:
-            add_level(db, canteen_message.canteen_id, level.level, level.windows_num)
-        new_windows_id = []
-        old_windows_id = []
-        for window in level.windows_information:
-            if window.windows < 10:
-                num = "0" + str(window.windows)
-            else:
-                num = str(window.windows)
-            new_window_id = new_level_id + num
-            new_windows_id.append(new_window_id)
-            old_window = get_window_by_window_id(db, new_window_id)
-            if old_window:
-                old_window.windows_name = window.windows_name
-                db.commit()
-                db.refresh(old_window)
-            if not old_window:
-                add_window(db, window.windows_name, new_level_id, window.windows)
-        windows = get_windows_by_level_id(db, new_level_id)
-        for window in windows:
-            old_windows_id.append(window.window_id)
-        delete_windows_id = [window_id for window_id in old_windows_id if window_id not in new_windows_id]
-        for delete_window_id in delete_windows_id:
-            delete_window = get_window_by_window_id(db, delete_window_id)
-            dishes = get_dishes_by_window_id(db, delete_window_id)
-            for dish in dishes:
-                db.delete(dish)
-                db.commit()
-            db.delete(delete_window)
-            db.commit()
-    old_levels_id = []
-    levels = get_levels_by_canteen_id(db, canteen_message.canteen_id)
-    for level in levels:
-        old_levels_id.append(level.level_id)
-    delete_levels_id = [delete_level_id for delete_level_id in old_levels_id if delete_level_id not in new_levels_id]
-    for delete_level_id in delete_levels_id:
-        delete_level = get_level_by_level_id(db, delete_level_id)
-        windows = get_windows_by_level_id(db, delete_level_id)
-        for window in windows:
-            dishes = get_dishes_by_window_id(db, window.window_id)
-            for dish in dishes:
-                db.delete(dish)
-                db.commit()
-            db.delete(window)
-            db.commit()
-        db.delete(delete_level)
-        db.commit()
-    return {"message": "success", "detail": "修改成功", "data": {}}
-
-
 # 按页获取餐厅信息
 @background.get("/canteens", status_code=200, response_description="got successfully", summary="按页获取餐厅信息")
 async def get_canteens_by_page(page: int, limit: int, db: Session = Depends(get_db),
@@ -472,3 +402,77 @@ async def add_photo(photo: UploadFile, current_manager: ManagerMessage = Depends
     async with aiofiles.open(file_path, "wb") as f:
         await f.write(await photo.read())
     return {"message": "success", "detail": "上传成功", "data": {"url": file_path}}
+
+
+# 修改餐厅
+@background.put("/canteens", status_code=200, response_description="edited successfully", summary="修改餐厅信息")
+async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(), db: Session = Depends(get_db),
+                        current_manager: ManagerMessage = Depends(get_current_manager)):
+    canteen = get_canteen_by_canteen_id(db, canteen_id)
+    if not canteen:
+        raise HTTPException(status_code=404, detail="餐厅不存在")
+    canteen.canteen_name = canteen_message.canteen_name
+    canteen.level_num = canteen_message.level_num
+    db.commit()
+    db.refresh(canteen)
+    new_levels_id = []
+    for level in canteen_message.levels:
+        new_level_id = get_level_id(canteen_id, level.level)
+        new_levels_id.append(new_level_id)
+        old_level = get_level_by_level_id(db, new_level_id)
+        if old_level:
+            old_level.window_num = level.windows_num
+            db.commit()
+            db.refresh(old_level)
+        if not old_level:
+            add_level(db, canteen_id, level.level, level.windows_num)
+        new_windows_id = []
+        old_windows_id = []
+        for window in level.windows_information:
+            if window.windows < 10:
+                num = "0" + str(window.windows)
+            else:
+                num = str(window.windows)
+            new_window_id = new_level_id + num
+            new_windows_id.append(new_window_id)
+            old_window = get_window_by_window_id(db, new_window_id)
+            if old_window:
+                old_window.windows_name = window.windows_name
+                db.commit()
+                db.refresh(old_window)
+            if not old_window:
+                add_window(db, window.windows_name, new_level_id, window.windows)
+        windows = get_windows_by_level_id(db, new_level_id)
+        for window in windows:
+            old_windows_id.append(window.window_id)
+        delete_windows_id = [window_id for window_id in old_windows_id if window_id not in new_windows_id]
+        for delete_window_id in delete_windows_id:
+            delete_window = get_window_by_window_id(db, delete_window_id)
+            dishes = get_dishes_by_window_id(db, delete_window_id)
+            for dish in dishes:
+                db.delete(dish)
+                db.commit()
+            db.delete(delete_window)
+            db.commit()
+    old_levels_id = []
+    levels = get_levels_by_canteen_id(db, canteen_id)
+    for level in levels:
+        old_levels_id.append(level.level_id)
+    delete_levels_id = [delete_level_id for delete_level_id in old_levels_id if delete_level_id not in new_levels_id]
+    for delete_level_id in delete_levels_id:
+        delete_level = get_level_by_level_id(db, delete_level_id)
+        windows = get_windows_by_level_id(db, delete_level_id)
+        for window in windows:
+            dishes = get_dishes_by_window_id(db, window.window_id)
+            for dish in dishes:
+                db.delete(dish)
+                db.commit()
+            db.delete(window)
+            db.commit()
+        db.delete(delete_level)
+        db.commit()
+    if canteen_message.campus_id == canteen.campus_id:
+        return {"message": "success", "detail": "修改成功", "data": {}}
+    else:
+        return 0
+
