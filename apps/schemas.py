@@ -133,9 +133,4 @@ class EditCanteenMessage(BaseModel):
         orm_mode = True
 
 
-class DateMessage(BaseModel):
-    page: int
-    limit: int
-    morning: bool
-    noon: bool
-    night: bool
+
