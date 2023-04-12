@@ -21,9 +21,9 @@ class Dishes(Base):
     dish_id = Column(String(9), primary_key=True, index=True)
     dish_name = Column(String(15), index=True)  #
     # 供饭时间
-    morning = Column(Boolean)
-    noon = Column(Boolean)
-    night = Column(Boolean)
+    morning = Column(Boolean, index=True)
+    noon = Column(Boolean, index=True)
+    night = Column(Boolean, index=True)
     canteen_id = Column(String(2))
     window_id = Column(String(6), primary_key=True, index=True)
     muslim = Column(Boolean)  # 是否清真

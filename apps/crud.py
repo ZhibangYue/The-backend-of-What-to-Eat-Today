@@ -242,6 +242,11 @@ def get_dishes_filter_night(db: Session, page: int, limit: int):
     return db.query(Dishes).filter(Dishes.night == 1).offset(skip).limit(limit).all()
 
 
+# 按餐厅获取菜品
+def get_dishes_by_canteen_id(db: Session, canteen_id: str):
+    return db.query(Dishes).filter(Dishes.canteen_id == canteen_id).all()
+
+
 # 按楼层获取楼层
 def get_level(db: Session, level: int):
     return db.query(Levels).filter(Levels.level == level).first()
