@@ -75,8 +75,8 @@ def add_canteen(db: Session, canteen_message: CanteenMessage):
 
 
 # 餐厅名查餐厅
-def get_canteen_by_name(db: Session, name: str):
-    return db.query(Canteens).filter(Canteens.canteen_name == name).first()
+def get_canteen_by_name(db: Session, name: str, campus_id: int):
+    return db.query(Canteens).filter(Canteens.canteen_name == name, Canteens.campus_id == campus_id).first()
 
 
 # 按页获取餐厅

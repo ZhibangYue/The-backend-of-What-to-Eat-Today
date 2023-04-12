@@ -189,14 +189,14 @@ async def delete_current_manager(username: str, db: Session = Depends(get_db),
 async def add_new_canteens(canteen_message: CanteenMessage, db: Session = Depends(get_db),
                            current_manager: ManagerMessage = Depends(get_current_manager)
                            ):
-    canteen = get_canteen_by_name(db, canteen_message.canteen_name)
+    canteen = get_canteen_by_name(db, canteen_message.canteen_name, canteen_message.campus_id)
     if canteen:
         raise HTTPException(status_code=400, detail="餐厅已存在")
     campus = get_campus_by_id(db, canteen_message.campus_id)
-    if campus.canteen_num > 8:
+    if campus.canteen_num == 9:
         raise HTTPException(status_code=400, detail="添加失败，该校区餐厅编号已满，请联系开发人员")
     add_canteen(db, canteen_message)
-    new_canteen = get_canteen_by_name(db, canteen_message.canteen_name)
+    new_canteen = get_canteen_by_name(db, canteen_message.canteen_name, canteen_message.campus_id)
     for level in canteen_message.levels:
         add_level(db, new_canteen.canteen_id, level.level, level.windows_num)
         level_id = get_level_id(new_canteen.canteen_id, level.level)
@@ -273,17 +273,16 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
             db.commit()
         db.delete(delete_level)
         db.commit()
-    if canteen_message.campus_id == canteen.campus_id:
-        return {"message": "success", "detail": "修改成功", "data": {}}
-    else:
-        canteen = get_canteen_by_name(db, canteen_message.canteen_name)
+
+    if canteen.campus_id != canteen_message.campus_id:
+        canteen = get_canteen_by_name(db, canteen_message.canteen_name, canteen_message.campus_id)
         if canteen:
             raise HTTPException(status_code=400, detail="餐厅已存在")
         campus = get_campus_by_id(db, canteen_message.campus_id)
         if campus.canteen_num == 9:
             raise HTTPException(status_code=400, detail="添加失败，该校区餐厅编号已满，请联系开发人员")
         add_canteen(db, canteen_message)
-        new_canteen = get_canteen_by_name(db, canteen_message.canteen_name)
+        new_canteen = get_canteen_by_name(db, canteen_message.canteen_name, canteen_message.campus_id)
         for level in canteen_message.levels:
             add_level(db, new_canteen.canteen_id, level.level, level.windows_num)
             level_id = get_level_id(new_canteen.canteen_id, level.level)
@@ -310,6 +309,7 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
             db.commit()
         db.delete(old_canteen)
         db.commit()
+    return {"message": "success", "detail": "修改成功", "data": {}}
 
 # 按页获取餐厅信息
 @background.get("/canteens", status_code=200, response_description="got successfully", summary="按页获取餐厅信息")
