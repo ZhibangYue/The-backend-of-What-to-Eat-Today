@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from apps import background, models
+from apps import models
 from apps.database import engine
 from apps.background import background
 from apps.frontpage import frontpage

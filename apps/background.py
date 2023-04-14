@@ -1,13 +1,11 @@
+import os
 import random
 import time
-
 import aiofiles
-from fastapi import FastAPI, HTTPException, Depends, Form, status, APIRouter, File, UploadFile, Body
-from passlib.context import CryptContext
-from .database import SessionLocal
+from fastapi import Depends, status, APIRouter, UploadFile, Body
 from .crud import *
 from .schemas import *
-from typing import List, Optional, Union
+from typing import Union
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -161,6 +159,17 @@ async def login_for_access_token(form_data: PasswordRequestForm = Depends(), db:
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+# 管理员修改密码
+@background.post("/manager/change-password", status_code=200,
+                 response_description="changed successfully",
+                 summary="修改密码")
+async def change_password(password: str = Form(..., min_length=8, max_lengh=20), db: Session = Depends(get_db),
+                          current_manager: ManagerMessage = Depends(get_current_manager)):
+    hashed_password = hash_password(password)
+    change_manager_password(db, current_manager.username, hashed_password)
+    return {"message": "success", "detail": "修改成功", "data": {}}
+
+
 # 删除管理员（拥有超级管理员权限才可使用）
 @background.delete("/managers", status_code=200, response_description="deleted successfully",
                    summary="删除管理员")
@@ -239,7 +248,7 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
             new_windows_id.append(new_window_id)
             old_window = get_window_by_window_id(db, new_window_id)
             if old_window:
-                old_window.windows_name = window.windows_name
+                old_window.window_name = window.windows_name
                 db.commit()
                 db.refresh(old_window)
             if not old_window:
@@ -298,7 +307,7 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
             db.refresh(dish)
         old_canteen = get_canteen_by_canteen_id(db, canteen_id)
         if not old_canteen:
-            raise HTTPException(status_code=400, detail="餐厅不存在")
+            raise HTTPException(status_code=404, detail="餐厅不存在")
         levels = get_levels_by_canteen_id(db, canteen_id)
         for level in levels:
             windows = get_windows_by_level_id(db, level.level_id)
@@ -311,6 +320,7 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
         db.commit()
     return {"message": "success", "detail": "修改成功", "data": {}}
 
+
 # 按页获取餐厅信息
 @background.get("/canteens", status_code=200, response_description="got successfully", summary="按页获取餐厅信息")
 async def get_canteens_by_page(page: int, limit: int, db: Session = Depends(get_db),
@@ -318,7 +328,20 @@ async def get_canteens_by_page(page: int, limit: int, db: Session = Depends(get_
                                ):
     canteens = get_canteens(db, page, limit)
     canteens_information = get_canteens_message(db, canteens)
-    return {"message": "success", "detail": "获取成功", "data": {"canteens_information": canteens_information}}
+    canteens_num = len(get_all_canteens(db))
+    total_page = get_total_page(canteens_num, limit)
+    if not canteens_information:
+        if page == 1:
+            raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+        if page > total_page:
+            page = total_page
+            canteens = get_canteens(db, page, limit)
+            canteens_information = get_canteens_message(db, canteens)
+            if not canteens_information:
+                raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+    return {"message": "success", "detail": "获取成功",
+            "data": {"canteens_information": canteens_information,
+                     "page_information": {"page": page, "total_page": total_page}}}
 
 
 # 删除餐厅
@@ -367,7 +390,20 @@ async def get_canteens_by_campus(page: int, limit: int, campus_id: int, db: Sess
                                  current_manager: ManagerMessage = Depends(get_current_manager)):
     canteens = get_canteens_filter_campus(db, page, limit, campus_id)
     canteens_information = get_canteens_message(db, canteens)
-    return {"message": "success", "detail": "获取成功", "data": {"canteens_information": canteens_information}}
+    canteens_num = len(get_canteens_by_campus_id(db, campus_id))
+    total_page = get_total_page(canteens_num, limit)
+    if not canteens_information:
+        if page == 1:
+            raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+        if page > total_page:
+            page = total_page
+            canteens = get_canteens_filter_campus(db, page, limit, campus_id)
+            canteens_information = get_canteens_message(db, canteens)
+            if not canteens_information:
+                raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+    return {"message": "success", "detail": "获取成功",
+            "data": {"canteens_information": canteens_information,
+                     "page_information": {"page": page, "total_page": total_page}}}
 
 
 # 菜品管理接口
@@ -392,6 +428,14 @@ async def edit_dish(dish_message: DishMessage, dish_id: str = Body(), db: Sessio
     new_window = get_window(db, dish_message.canteen_id, dish_message.level, dish_message.window)
     if not new_window:
         raise HTTPException(status_code=404, detail="此窗口不存在")
+    if dish.photos:
+        if dish.photos != dish_message.photos:
+            if os.path.exists(dish.photos):
+                os.remove(dish.photos)
+    if dish.spare_photos:
+        if dish.spare_photos != dish_message.spare_photos:
+            if os.path.exists(dish.photos):
+                os.remove(dish.spare_photos)
     if new_window.window_id == dish.window_id:
         dish.dish_name = dish_message.name
         dish.morning = dish_message.morning
@@ -416,7 +460,19 @@ async def get_dishes_by_page(page: int, limit: int, db: Session = Depends(get_db
                              current_manager: ManagerMessage = Depends(get_current_manager)):
     dishes = get_dishes_page(db, page, limit)
     dishes_information = get_dishes_message(db, dishes)
-    return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information}}
+    dishes_num = len(get_all_dishes(db))
+    total_page = get_total_page(dishes_num, limit)
+    if not dishes_information:
+        if page == 1:
+            raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+        if page > total_page:
+            page = total_page
+            dishes = get_dishes_page(db, page, limit)
+            dishes_information = get_dishes_message(db, dishes)
+            if not dishes_information:
+                raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+    return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information},
+            "page_information": {"page": page, "total_page": total_page}}
 
 
 # 删除菜品
@@ -439,7 +495,19 @@ async def get_dishes_by_canteen(canteen_id: str, page: int, limit: int, db: Sess
                                 current_manager: ManagerMessage = Depends(get_current_manager)):
     dishes = get_dishes_filter_canteen(db, page, limit, canteen_id)
     dishes_information = get_dishes_message(db, dishes)
-    return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information}}
+    dishes_num = len(get_dishes_by_canteen_id(db, canteen_id))
+    total_page = get_total_page(dishes_num, limit)
+    if not dishes_information:
+        if page == 1:
+            raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+        if page > total_page:
+            page = total_page
+            dishes = get_dishes_filter_canteen(db, page, limit, canteen_id)
+            dishes_information = get_dishes_message(db, dishes)
+            if not dishes_information:
+                raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+    return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information},
+            "page_information": {"page": page, "total_page": total_page}}
 
 
 # 按时间筛选菜品
@@ -448,22 +516,21 @@ async def get_dishes_by_canteen(canteen_id: str, page: int, limit: int, db: Sess
 async def get_dishes_by_time(page: int, limit: int, morning: bool, noon: bool, night: bool,
                              db: Session = Depends(get_db),
                              current_manager: ManagerMessage = Depends(get_current_manager)):
-    dishes = []
-    if morning:
-        morning_dishes = get_dishes_filter_morning(db, page, limit)
-        for dish in morning_dishes:
-            dishes.append(dish)
-    if noon:
-        noon_dishes = get_dishes_filter_noon(db, page, limit)
-        for dish in noon_dishes:
-            dishes.append(dish)
-    if night:
-        night_dishes = get_dishes_filter_night(db, page, limit)
-        for dish in night_dishes:
-            dishes.append(dish)
-    dishes = list(set(dishes))
+    dishes = get_dishes_filter_time(db, morning, noon, night, page, limit)
     dishes_information = get_dishes_message(db, dishes)
-    return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information}}
+    dishes_num = len(get_dishes_by_times(db, morning, noon, night))
+    total_page = get_total_page(dishes_num, limit)
+    if not dishes_information:
+        if page == 1:
+            raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+        if page > total_page:
+            page = total_page
+            dishes = get_dishes_filter_time(db, morning, noon, night, page, limit)
+            dishes_information = get_dishes_message(db, dishes)
+            if not dishes_information:
+                raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+    return {"message": "success", "detail": "获取成功", "data": {"dishes_information": dishes_information},
+            "page_information": {"page": page, "total_page": total_page}}
 
 
 # 获取窗口及其id的序列
@@ -498,7 +565,7 @@ async def get_windows(db: Session = Depends(get_db), current_manager: ManagerMes
 
 # 上传图片
 @background.post("/photos", status_code=201, response_description="added successfully", summary="上传图片")
-async def add_photo(photo: UploadFile, current_manager: ManagerMessage = Depends(get_current_manager),
+async def add_photo(photo: UploadFile,current_manager: ManagerMessage = Depends(get_current_manager)
                     ):
     zh = photo.filename.split(".").pop()
     dir_path = "./static/"

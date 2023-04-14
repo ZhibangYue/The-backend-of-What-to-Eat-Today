@@ -282,6 +282,10 @@ def get_level_by_level_id(db: Session, level_id: str):
     return db.query(Levels).filter(Levels.level_id == level_id).first()
 
 
+def get_all_dishes(db: Session):
+    return db.query(Dishes).all()
+
+
 # 构造按页返回菜品信息的数据结构
 def get_dishes_message(db: Session, dishes: list):
     dishes_information = []
@@ -321,8 +325,6 @@ def get_dishes_message(db: Session, dishes: list):
                 }
         }
         dishes_information.append(dish_information)
-    if not dishes_information:
-        raise HTTPException(status_code=404, detail="获取失败，无更多信息")
     return dishes_information
 
 
@@ -356,13 +358,82 @@ def get_canteens_message(db: Session, canteens: list):
                                "levels_information": sorted_levels_information
                                }
         canteens_information.append(canteen_information)
-    if not canteens_information:
-        raise HTTPException(status_code=404, detail="获取失败，无更多信息")
     return canteens_information
 
 
+def change_manager_password(db: Session, username: str, hashed_password: str, permission: bool = False):
+    manager = get_manager(db, username)
+    manager.hashed_password = hashed_password
+    db.commit()
+    db.refresh(manager)
+
+
+def get_total_page(num: int, limit: int):
+    if num <= limit:
+        total_page = 1
+    else:
+        if num % limit == 0:
+            total_page = num // limit
+        else:
+            total_page = (num // limit) + 1
+    return total_page
+
+
+# 按时间筛选菜品
+def get_dishes_filter_time(db: Session, morning: bool, noon: bool, night: bool, page: int, limit: int):
+    dishes = []
+    if morning:
+        morning_dishes = get_dishes_filter_morning(db, page, limit)
+        for dish in morning_dishes:
+            dishes.append(dish)
+    if noon:
+        noon_dishes = get_dishes_filter_noon(db, page, limit)
+        for dish in noon_dishes:
+            dishes.append(dish)
+    if night:
+        night_dishes = get_dishes_filter_night(db, page, limit)
+        for dish in night_dishes:
+            dishes.append(dish)
+    dishes = list(set(dishes))
+    return dishes
+
+
+def get_dishes_by_morning(db: Session):
+    return db.query(Dishes).filter(Dishes.morning == 1).all()
+
+
+def get_dishes_by_noon(db: Session):
+    return db.query(Dishes).filter(Dishes.noon == 1).all()
+
+
+def get_dishes_by_night(db: Session):
+    return db.query(Dishes).filter(Dishes.night == 1).all()
+
+
+def get_dishes_by_times(db: Session, morning: bool, noon: bool, night: bool):
+    dishes = []
+    if morning:
+        morning_dishes = get_dishes_by_morning(db)
+        for dish in morning_dishes:
+            dishes.append(dish)
+    if noon:
+        noon_dishes = get_dishes_by_noon(db)
+        for dish in noon_dishes:
+            dishes.append(dish)
+    if night:
+        night_dishes = get_dishes_by_night(db)
+        for dish in night_dishes:
+            dishes.append(dish)
+    dishes = list(set(dishes))
+    return dishes
+
+
+def get_canteens_by_campus_id(db: Session, campus_id: int):
+    return db.query(Canteens).filter(Canteens.campus_id == campus_id).all()
+
+
 # 前台
-def get_user_openid(db: Session, openid: str):
+def get_user_by_openid(db: Session, openid: str):
     return db.query(Users).filter(Users.openid == openid).first()
 
 
@@ -422,6 +493,7 @@ def get_dish_message(db: Session, dishes: list, openid: str = None):
         campus = get_campus_by_id(db, canteen.campus_id)
         if openid:
             like = get_like(db, openid, dish.dish_id)
+            like_information = {}
             if not like:
                 like_information = {
                     "like": False,
@@ -453,3 +525,30 @@ def get_dish_message(db: Session, dishes: list, openid: str = None):
             }
         dishes_information.append(dish_information)
     return dishes_information
+
+
+# 获取点赞记录
+def search_likes_records(db: Session, openid: str):
+    records = db.query(Like).filter(Like.openid == openid).all()
+    records_message = []
+    for record in records:
+        dish = get_dish_by_dish_id(db, record.dish_id)
+        record_message = {
+            "dish_name": dish.dish_name,
+            "time": record.date_
+        }
+        records_message.append(record_message)
+    return records_message
+
+
+# 增加新用户
+def add_user(db: Session, openid: str, user_name: str, personal_signature: str):
+    user_dict = {
+        "openid": openid,
+        "user_name": user_name,
+        "personal_signature": personal_signature
+    }
+    user = Users(**user_dict)
+    db.add(user)
+    db.commit()
+    db.refresh(user)

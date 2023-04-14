@@ -12,7 +12,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
-    openid: Union[int, None] = None
+    openid: Union[str, None] = None
 
 
 # 登录表单
@@ -129,6 +129,25 @@ class EditCanteenMessage(BaseModel):
     canteen_name: str
     level_num: int
     levels: list[WindowsMessage]
+
+    class Config:
+        orm_mode = True
+
+
+class UserBase(BaseModel):
+    code: str
+    username: str
+    personal_signature: str
+
+    class Config:
+        orm_mode = True
+
+
+class UserMessage(BaseModel):
+    openid: str
+    username: str
+    personal_signature: str
+    head_sculpture: str
 
     class Config:
         orm_mode = True

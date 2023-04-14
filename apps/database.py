@@ -13,7 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import pymysql
 
-SQLALCHEMY_DATABASE_URL = "mysql://root:154200@localhost:3306/eata"
+SQLALCHEMY_DATABASE_URL = "mysql://root:154200@localhost:3306/eat1"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL)
