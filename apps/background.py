@@ -261,6 +261,12 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
             delete_window = get_window_by_window_id(db, delete_window_id)
             dishes = get_dishes_by_window_id(db, delete_window_id)
             for dish in dishes:
+                if dish.photos:
+                    if os.path.exists(dish.photos):
+                        os.remove(dish.photos)
+                if dish.spare_photos:
+                    if os.path.exists(dish.photos):
+                        os.remove(dish.spare_photos)
                 db.delete(dish)
                 db.commit()
             db.delete(delete_window)
@@ -276,6 +282,12 @@ async def edit_canteens(canteen_message: CanteenMessage, canteen_id: str = Body(
         for window in windows:
             dishes = get_dishes_by_window_id(db, window.window_id)
             for dish in dishes:
+                if dish.photos:
+                    if os.path.exists(dish.photos):
+                        os.remove(dish.photos)
+                if dish.spare_photos:
+                    if os.path.exists(dish.photos):
+                        os.remove(dish.spare_photos)
                 db.delete(dish)
                 db.commit()
             db.delete(window)
@@ -357,6 +369,12 @@ async def delete_current_canteen(canteen_id: str, db: Session = Depends(get_db),
         for window in windows:
             dishes = get_dishes_by_window_id(db, window.window_id)
             for dish in dishes:
+                if dish.photos:
+                    if os.path.exists(dish.photos):
+                        os.remove(dish.photos)
+                if dish.spare_photos:
+                    if os.path.exists(dish.photos):
+                        os.remove(dish.spare_photos)
                 db.delete(dish)
                 db.commit()
             db.delete(window)
@@ -482,6 +500,12 @@ async def delete_current_dish(dish_id: str, db: Session = Depends(get_db),
     dish = get_dish_by_dish_id(db, dish_id)
     if not dish:
         raise HTTPException(status_code=404, detail="菜品不存在")
+    if dish.photos:
+        if os.path.exists(dish.photos):
+            os.remove(dish.photos)
+    if dish.spare_photos:
+        if os.path.exists(dish.photos):
+            os.remove(dish.spare_photos)
     db.delete(dish)
     db.commit()
 
@@ -565,7 +589,7 @@ async def get_windows(db: Session = Depends(get_db), current_manager: ManagerMes
 
 # 上传图片
 @background.post("/photos", status_code=201, response_description="added successfully", summary="上传图片")
-async def add_photo(photo: UploadFile,current_manager: ManagerMessage = Depends(get_current_manager)
+async def add_photo(photo: UploadFile, current_manager: ManagerMessage = Depends(get_current_manager)
                     ):
     zh = photo.filename.split(".").pop()
     dir_path = "./static/"
