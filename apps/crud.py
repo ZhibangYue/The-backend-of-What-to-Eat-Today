@@ -1,3 +1,4 @@
+import os
 from operator import attrgetter
 import datetime
 from fastapi import HTTPException
@@ -187,7 +188,7 @@ def make_dish_id(db: Session, window_id: str):
 # 对菜品表进行添加
 def add_dish(db: Session, dish_message: DishMessage):
     window = get_window(db, dish_message.canteen_id, dish_message.level, dish_message.window)
-    if window.dish_num > 998:
+    if window.dish_num == 999:
         raise HTTPException(status_code=400, detail="添加失败，该窗口菜品编号已满，请联系开发人员")
     dish_id = make_dish_id(db, window.window_id)
     dish_dict = {
@@ -430,6 +431,19 @@ def get_dishes_by_times(db: Session, morning: bool, noon: bool, night: bool):
 
 def get_canteens_by_campus_id(db: Session, campus_id: int):
     return db.query(Canteens).filter(Canteens.campus_id == campus_id).all()
+
+
+def delete_dish(db: Session, dish: Dishes):
+    if not dish:
+        raise HTTPException(status_code=404, detail="菜品不存在")
+    if dish.photos:
+        if os.path.exists(dish.photos):
+            os.remove(dish.photos)
+    if dish.spare_photos:
+        if os.path.exists(dish.spare_photos):
+            os.remove(dish.spare_photos)
+    db.delete(dish)
+    db.commit()
 
 
 # 前台
