@@ -477,6 +477,8 @@ async def get_dishes_by_page(page: int, limit: int, db: Session = Depends(get_db
 async def delete_current_dish(dish_id: str, db: Session = Depends(get_db),
                               current_manager: ManagerMessage = Depends(get_current_manager)):
     dish = get_dish_by_dish_id(db, dish_id)
+    if not dish:
+        raise HTTPException(status_code=404, detail="菜品不存在")
     delete_dish(db, dish)
     return {"message": "success", "detail": "删除成功", "data": {}}
 

@@ -434,8 +434,6 @@ def get_canteens_by_campus_id(db: Session, campus_id: int):
 
 
 def delete_dish(db: Session, dish: Dishes):
-    if not dish:
-        raise HTTPException(status_code=404, detail="菜品不存在")
     if dish.photos:
         if os.path.exists(dish.photos):
             os.remove(dish.photos)
