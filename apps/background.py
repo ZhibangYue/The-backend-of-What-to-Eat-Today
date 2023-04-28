@@ -51,10 +51,10 @@ def authenticate_manager(username: str, password: str, db: Session = Depends(get
 # 定义Token 相关常量
 
 # 密钥
-SECRET_KEY = "b81a5447dba59bda81233e037a5f4d6232f0f84a4ca8633c10ce7b57fe916a2b"
+SECRET_KEY = ""
 
 # 加密算法
-ALGORITHM = "HS256"
+ALGORITHM = ""
 
 # Token过期时间
 ACCESS_TOKEN_EXPIRE_MINUTES = 60

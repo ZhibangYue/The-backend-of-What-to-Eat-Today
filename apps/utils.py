@@ -18,10 +18,10 @@ def get_db():
 
 
 # 鉴权需要
-APPID = "wx0d164561b0573e5c"
-SECRET = "6e85660d10f135e6732b79125626d4bd"
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
+APPID = ""
+SECRET = ""
+SECRET_KEY = ""
+ALGORITHM = ""
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
 # Bearer令牌，从"/token"这一url处获取
