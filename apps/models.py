@@ -81,7 +81,7 @@ class Users(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     openid = Column(String(90), primary_key=True, index=True)
-    user_name = Column(String(15), unique=True)
+    user_name = Column(String(15))
     personal_signature = Column(String(70))
     head_sculpture = Column(String(70))
 
@@ -89,7 +89,7 @@ class Users(Base):
 class Like(Base):
     __tablename__ = "likes"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    openid = Column(Integer, ForeignKey("users.id"))  # user id
+    openid = Column(String(90), ForeignKey("users.openid"))  # user id
     dish_id = Column(String(9), index=True)
     date_ = Column(DateTime)
 

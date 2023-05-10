@@ -273,6 +273,13 @@ def get_dish_by_dish_id(db: Session, dish_id: str):
     return db.query(Dishes).filter(Dishes.dish_id == dish_id).first()
 
 
+def get_dish_by_dish_id_list(db: Session, dish_id: str):
+    dish_list = []
+    dishes = db.query(Dishes).filter(Dishes.dish_id == dish_id).first()
+    dish_list.append(dishes)
+    return list(set(dish_list))
+
+
 # 按窗口id获取窗口
 def get_window_by_window_id(db: Session, window_id: str):
     return db.query(Windows).filter(Windows.window_id == window_id).first()
@@ -462,10 +469,16 @@ def get_user_by_openid(db: Session, openid: str):
 #     return db.query(Canteens).filter(Canteens.canteen_name == canteen_name).first()
 
 
-def get_dishes_by_canteen_and_level(db: Session, canteen_id: str, level: int):
+def get_dishes_by_canteen_and_level(db: Session, canteen_id: str, level: int, page: int, num: int):
     # canteen = get_canteen_by_name(db, canteen_name)
     # canteen_id = canteen.canteen_id
-    return db.query(Dishes).filter(Dishes.canteen_id == canteen_id, Dishes.level == level).all()
+    skip = (page - 1) * num
+    dishes = []
+    dish = db.query(Dishes).filter(Dishes.canteen_id == canteen_id, Dishes.level == level).offset(skip).limit(num).all()
+    for dish_ in dish:
+        dishes.append(dish_)
+    dishes = list(set(dishes))
+    return dishes
 
 
 def get_dishes_by_name_and_time(db: Session, canteen_id: str, timex: str):
@@ -506,13 +519,39 @@ def get_dish_message(db: Session, dishes: list, openid: str = None):
         canteen = get_canteen_by_canteen_id(db, level.canteen_id)
         campus = get_campus_by_id(db, canteen.campus_id)
         like = get_like(db, openid, dish.dish_id)
+        dish_information = {
+            "name": dish.dish_name,
+            "dish_id": dish.dish_id,
+            # "price": dish.price,
+            # "position":
+            #     {
+            #         "level": level.level,
+            #         "window_name": window.window_name,
+            #     },
+            # "image": dish.photos,
+
+        }
+        dishes_information.append(dish_information)
+    if not dishes_information:
+        raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+    return dishes_information
+
+
+def get_dish_message_frontpage(db: Session, dishes: list, openid: str = None):
+    dishes_information = []
+    for dish in dishes:
+        window = get_window_by_window_id(db, dish.window_id)
+        level = get_level_by_level_id(db, window.level_id)
+        canteen = get_canteen_by_canteen_id(db, level.canteen_id)
+        campus = get_campus_by_id(db, canteen.campus_id)
+        like = get_like(db, openid, dish.dish_id)
         if not like:
             like_information = {
                 "like": False,
                 "time": None,
                 "like_num": dish.likes
             }
-        if like:
+        else:
             like_information = {
                 "like": True,
                 "time": like.date_,
@@ -521,14 +560,33 @@ def get_dish_message(db: Session, dishes: list, openid: str = None):
 
         dish_information = {
             "name": dish.dish_name,
+            "dish_id": dish.dish_id,
             "price": dish.price,
+            "muslim": dish.muslim,
+            "image": dish.photos,
+            "like": like_information,
+            "date":
+                {
+                    "morning": dish.morning,
+                    "noon": dish.noon,
+                    "night": dish.night,
+                },
             "position":
                 {
-                    "level": level.level,
-                    "window_name": window.window_name,
-                },
-            "image": dish.photos,
-
+                    "campus": {
+                        "campus_id": campus.campus_id,
+                        "campus_name": campus.campus_name,
+                    },
+                    "level": {
+                        "level_id": level.level_id,
+                        "level": level.level
+                    },
+                    "window":
+                        {
+                            "window_id": window.window_id,
+                            "window_name": window.window_name,
+                        }
+                }
         }
         dishes_information.append(dish_information)
     if not dishes_information:
@@ -544,6 +602,7 @@ def search_likes_records(db: Session, openid: str):
         dish = get_dish_by_dish_id(db, record.dish_id)
         record_message = {
             "dish_name": dish.dish_name,
+            "dish_id":dish.dish_id,
             "time": record.date_
         }
         records_message.append(record_message)
@@ -555,7 +614,8 @@ def add_user(db: Session, openid: str, user_name: str, personal_signature: str):
     user_dict = {
         "openid": openid,
         "user_name": user_name,
-        "personal_signature": personal_signature
+        "personal_signature": personal_signature,
+        "head_sculpture": ''
     }
     user = Users(**user_dict)
     db.add(user)
@@ -567,3 +627,67 @@ def add_user(db: Session, openid: str, user_name: str, personal_signature: str):
 def search_dishes_by_name(db: Session, name: str):
     word = '%' + name + '%'
     return db.query(Dishes).filter(Dishes.dish_name.like(word)).all()
+    
+
+# 搜索返回的信息
+def get_dish_message_frontpage_search(db: Session, dishes: list, openid: str = None):
+    dishes_information = []
+    for dish in dishes:
+        window = get_window_by_window_id(db, dish.window_id)
+        level = get_level_by_level_id(db, window.level_id)
+        canteen = get_canteen_by_canteen_id(db, level.canteen_id)
+        campus = get_campus_by_id(db, canteen.campus_id)
+        like = get_like(db, openid, dish.dish_id)
+        if not like:
+            like_information = {
+                "like": False,
+                "time": None,
+                "like_num": dish.likes
+            }
+        else:
+            like_information = {
+                "like": True,
+                "time": like.date_,
+                "like_num": dish.likes
+            }
+
+        dish_information = {
+            "name": dish.dish_name,
+            "dish_id": dish.dish_id,
+            "price": dish.price,
+            "muslim": dish.muslim,
+            "image": dish.photos,
+            "like": like_information,
+            "date":
+                {
+                    "morning": dish.morning,
+                    "noon": dish.noon,
+                    "night": dish.night,
+                },
+            "position":
+                {
+                    "campus": {
+                        "campus_id": campus.campus_id,
+                        "campus_name": campus.campus_name,
+                    },
+                    "canteen":
+                        {
+                            "canteen_name":canteen.canteen_name,
+                            "canteen_id":canteen.canteen_id
+                        }
+                    ,
+                    "level": {
+                        "level_id": level.level_id,
+                        "level": level.level
+                    },
+                    "window":
+                        {
+                            "window_id": window.window_id,
+                            "window_name": window.window_name,
+                        }
+                }
+        }
+        dishes_information.append(dish_information)
+    if not dishes_information:
+        raise HTTPException(status_code=404, detail="获取失败，无更多信息")
+    return dishes_information

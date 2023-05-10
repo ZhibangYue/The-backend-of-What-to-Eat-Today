@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import pymysql
 
 # SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:123456@localhost:3306/demo"
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://supereat:0nlineTek@eat.mysql.database.azure.com:3306/eat"
+SQLALCHEMY_DATABASE_URL = ""
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL)
